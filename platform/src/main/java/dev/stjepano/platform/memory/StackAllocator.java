@@ -13,8 +13,8 @@ import java.lang.foreign.SegmentAllocator;
 ///
 /// ```java
 /// void someShortLivedMethod() {
-///   try (var arena = StackAllocator.push()) {
-///     MemorySegment someMemory = arena.allocate(16);
+///   try (var stack = StackAllocator.push()) {
+///     MemorySegment someMemory = stack.allocate(16);
 ///   }
 /// }
 /// ```
