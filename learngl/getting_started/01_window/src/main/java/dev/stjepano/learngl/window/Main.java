@@ -22,7 +22,7 @@ public class Main {
 
             while (!window.shouldClose()) {
                 platform.pollEvents();
-                gl.clearColorBuffer(0.11f, 0.12f, 0.13f, 1.0f);
+                gl.clearColorBuffer(0.2f, 0.3f, 0.3f, 1.0f);
                 gl.clearDepth(1.0f);
                 totalFrameTime += time.frameDeltaSeconds();
                 if (mouse.wasJustPressed(MButton.LEFT)) {
