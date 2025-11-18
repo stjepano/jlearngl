@@ -22,11 +22,15 @@ import java.lang.foreign.SegmentAllocator;
 /// NOTE: Arena size is 128KiB per thread.
 /// **Warning**: you must close it otherwise the arena will get filled up!
 public final class StackAllocator implements SegmentAllocator, AutoCloseable {
-    private static final ThreadLocal<StackAllocator> STACK = ThreadLocal.withInitial(() -> new StackAllocator(128 * 1024));
+    private static final int STACK_CAPACITY = 128 * 1024;
+    private static final int MAX_NESTED_PUSHES = 32;
+
+    private static final ThreadLocal<StackAllocator> STACK = ThreadLocal.withInitial(() -> new StackAllocator(STACK_CAPACITY));
 
     private final MemorySegment buffer;
-    private long pointer = 0;
-    private long savedPointer = 0;
+    private final long[] pointerStack = new long[MAX_NESTED_PUSHES];
+    private int pointerStackIndex = 0;
+    private long pointer;
 
     private StackAllocator(long sizeBytes) {
         this.buffer = Arena.global().allocate(sizeBytes);
@@ -34,13 +38,19 @@ public final class StackAllocator implements SegmentAllocator, AutoCloseable {
 
     public static StackAllocator push() {
         var threadsStack = STACK.get();
-        threadsStack.savedPointer = threadsStack.pointer;
+        if (threadsStack.pointerStackIndex == MAX_NESTED_PUSHES) {
+            throw new IllegalStateException("To many nested pushes!");
+        }
+        threadsStack.pointerStack[threadsStack.pointerStackIndex++] = threadsStack.pointer;
         return threadsStack;
     }
 
     @Override
     public void close() {
-        pointer = savedPointer;
+        if (pointerStackIndex == 0) {
+            throw new IllegalStateException("Close without push!");
+        }
+        pointer = pointerStack[--pointerStackIndex];
     }
 
     private boolean isPowerOfTwo(long num) {
@@ -64,12 +74,17 @@ public final class StackAllocator implements SegmentAllocator, AutoCloseable {
         }
 
         long aligned = alignToPowerOfTwo(pointer, byteAlignment);
-        if (aligned + byteSize >= buffer.byteSize()) {
+        if (aligned + byteSize > buffer.byteSize()) {
             throw new OutOfMemoryError("MemStack overflow!");
         }
 
         MemorySegment slice = buffer.asSlice(aligned, byteSize);
         pointer = aligned + byteSize;
         return slice;
+    }
+
+    // For test only
+    long pointer() {
+        return pointer;
     }
 }
