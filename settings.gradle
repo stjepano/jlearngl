@@ -1,0 +1,3 @@
+rootProject.name = 'jlearngl'
+include 'platform'
+include 'learngl:getting_started:01_window'

@@ -1,0 +1,62 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'dev.stjepano'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.withType(JavaExec).configureEach {
+    jvmArgs '--enable-native-access=ALL-UNNAMED'
+}
+
+tasks.withType(Test).configureEach {
+    jvmArgs '--enable-native-access=ALL-UNNAMED'
+}
+
+tasks.register('configureNativeBuild', Exec) {
+    workingDir 'native/platform'
+    commandLine 'cmake', '-B', 'build', '-S', '.', '-DCMAKE_BUILD_TYPE=Release'
+}
+
+tasks.register('buildNativeLibrary', Exec) {
+    dependsOn('configureNativeBuild')
+
+    workingDir 'native/platform'
+    commandLine 'cmake', '--build', 'build'
+}
+
+tasks.register('copyNativeLibrary', Copy) {
+    dependsOn('buildNativeLibrary')
+
+    from 'native/platform/build/libplatform.so'
+    into 'build/resources/main/dev/stjepano/platform/natives/linux/x64'
+}
+
+tasks.named('compileJava') {
+    dependsOn('buildNativeLibrary')
+}
+
+tasks.named('jar') {
+    dependsOn('buildNativeLibrary')
+}
+
+tasks.named('processResources') {
+    dependsOn('copyNativeLibrary')
+}
+
+
+
