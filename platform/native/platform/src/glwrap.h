@@ -19,6 +19,8 @@ typedef jfloat jGLfloat;
 
 
 PLATFORM_API void jglViewport(jGLint x, jGLint y, jGLsizei w, jGLsizei h);
+PLATFORM_API jboolean jglPolygonMode(jGLenum mode);
+
 PLATFORM_API void jglClearNamedFramebufferiv(jGLuint framebuffer, jGLenum buffer, jGLint drawbuffer, const jGLint *value);
 PLATFORM_API void jglClearNamedFramebufferuiv(jGLuint framebuffer, jGLenum buffer, jGLint drawbuffer, const jGLuint *value);
 PLATFORM_API void jglClearNamedFramebufferfv(jGLuint framebuffer, jGLenum buffer, jGLint drawbuffer, const jGLfloat *value);
@@ -38,11 +40,14 @@ PLATFORM_API void jglDeleteProgram(jGLuint program_id);
 PLATFORM_API jGLuint jglCreateVertexArray();
 PLATFORM_API void jglBindVertexArray(jGLuint vao_id);
 PLATFORM_API jboolean jglVertexArrayVertexBuffer(jGLuint vao_id, jGLuint binding_index, jGLuint buffer_id, jGLintptr offset, jGLsizei stride);
+PLATFORM_API jboolean jglVertexArrayIndexBuffer(jGLuint vao_id, jGLuint buffer_id);
 PLATFORM_API jboolean jglVertexArrayVertexAttrib(jGLuint vao_id, jGLuint attrib_index, jGLuint buffer_binding_index, jGLint num_component,
                                    jGLenum component_type, jboolean normalized, jGLuint offset);
 PLATFORM_API jboolean jglVertexArrayToggleAttrib(jGLuint vao_id, jGLuint attrib_index, jboolean enabled);
 PLATFORM_API void jglDeleteVertexArray(jGLuint vao_id);
+
 PLATFORM_API void jglDrawArrays(jGLenum mode, jGLint first, jGLsizei count);
+PLATFORM_API void jglDrawElements(jGLenum mode, jGLsizei count, jGLenum type, jlong offset);
 
 
 #endif //PLATFORM_GLWRAP_H

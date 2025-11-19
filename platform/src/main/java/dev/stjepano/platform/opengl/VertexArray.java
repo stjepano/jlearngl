@@ -22,4 +22,7 @@ public interface VertexArray extends GpuResource {
     /// @param attribIndex vertex attribute index
     /// @param enabled specifies if attribute is enabled or disabled
     void toggleAttrib(int attribIndex, boolean enabled);
+
+    /// Configure element array buffer binding for vertex array
+    void indexBuffer(Buffer indexBuffer);
 }

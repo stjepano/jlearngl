@@ -38,6 +38,18 @@ final class VertexArrayImpl implements VertexArray {
     }
 
     @Override
+    public void indexBuffer(Buffer indexBuffer) {
+        if (indexBuffer instanceof BufferImpl bufferImpl) {
+            if (!JGL.jglVertexArrayIndexBuffer(glId, bufferImpl.glId)) {
+                throw new OpenGLException("Failed to bind index buffer to vertex array.");
+            }
+        } else {
+            throw new IllegalStateException("indexBuffer not instance of BufferImpl");
+        }
+
+    }
+
+    @Override
     public void delete() {
         JGL.jglDeleteVertexArray(glId);
     }

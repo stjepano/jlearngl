@@ -22,17 +22,26 @@ public class TriangleTutorial {
             final OpenGL gl = platform.openGl();
 
             gl.viewport(0, 0, window.framebufferWidth(), window.framebufferHeight());
+            GLPolygonRasterMode currentMode = GLPolygonRasterMode.FILL;
+            gl.polygonMode(currentMode);
 
             float[] vertices = new float[] {
-                    -0.5f, -0.5f, 0.0f,
-                    0.5f, -0.5f, 0.0f,
-                    0.0f, 0.5f, 0.0f
+                    -0.5f, 0.5f, 0.0f, // top left
+                    -0.5f, -0.5f, 0.0f, // bottom left
+                    0.5f, -0.5f, 0.0f, // bottom right
+                    0.5f, 0.5f, 0.0f // top right
+            };
+            int[] indices = new int[] {
+                    0, 1, 2,
+                    0, 2, 3
             };
 
             MemorySegment verticesPtr = arena.allocateFrom(ValueLayout.JAVA_FLOAT, vertices);
+            MemorySegment indicesPtr = arena.allocateFrom(ValueLayout.JAVA_INT, indices);
             BufferStorageFlags storageFlags = BufferStorageFlags.builder()
                     .build();
             Buffer vertexBuffer = gl.createBuffer(verticesPtr.byteSize(), storageFlags, verticesPtr);
+            Buffer indexBuffer = gl.createBuffer(indicesPtr.byteSize(), storageFlags, indicesPtr);
 
             String vertexShaderSrc = loadText("/shaders/vertex.glsl");
             String fragmentShaderSrc = loadText("/shaders/fragment.glsl");
@@ -43,6 +52,7 @@ public class TriangleTutorial {
             vao.vertexBuffer(0, vertexBuffer, 0,  3 * (int)GLDataType.FLOAT.byteSize());
             vao.vertexAttrib(attribLocation, 0, 3, GLDataType.FLOAT, false,  0);
             vao.toggleAttrib(attribLocation, true);
+            vao.indexBuffer(indexBuffer);
 
             while (!window.shouldClose()) {
                 platform.pollEvents();
@@ -52,16 +62,22 @@ public class TriangleTutorial {
                     window.setShouldClose(true);
                     continue;
                 }
+                if (keyboard.wasJustPressed(Key.SPACE)) {
+                    currentMode = (currentMode == GLPolygonRasterMode.FILL) ? GLPolygonRasterMode.LINE : GLPolygonRasterMode.FILL;
+                    gl.polygonMode(currentMode);
+                }
 
                 gl.bindVertexArray(vao);
                 gl.bindProgram(program);
-                gl.drawArrays(GLPrimitive.TRIANGLES, 0, 3);
+                //gl.drawArrays(GLPrimitive.TRIANGLES, 0, 6);
+                gl.drawElements(GLPrimitive.TRIANGLES, 6, GLDataType.UNSIGNED_INT, 0L);
 
                 window.swapBuffers();
             }
 
             vao.delete();
             program.delete();
+            indexBuffer.delete();
             vertexBuffer.delete();
         }
     }

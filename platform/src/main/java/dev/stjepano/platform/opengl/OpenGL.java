@@ -16,6 +16,10 @@ public interface OpenGL {
     /// @param height Height of viewport
     void viewport(int x, int y, int width, int height);
 
+    /// Select a polygon rasterization mode
+    /// @param mode specifies how polygons will be rasterized (default FILL)
+    void polygonMode(GLPolygonRasterMode mode);
+
     /// Clears the GL_COLOR buffer of default framebuffer first color attachment with specified color values.
     void clearColorBuffer(float r, float g, float b, float a);
 
@@ -66,4 +70,11 @@ public interface OpenGL {
     /// @param first the starting index in the enabled buffers
     /// @param count the number of elements from enabled buffers
     void drawArrays(GLPrimitive primitiveType, int first, int count);
+
+    /// Render primitives from bound index buffer.
+    /// @param primitiveType the type of primitive to render
+    /// @param count number of elements to be rendered (array count in index buffer)
+    /// @param indexType the type of values in index buffer (Must be one of UNSIGNED_BYTE, UNSIGNED_SHORT, UNSIGNED_INT)
+    /// @param offset a byte offset in index buffer to first index
+    void drawElements(GLPrimitive primitiveType, int count, GLDataType indexType, long offset);
 }

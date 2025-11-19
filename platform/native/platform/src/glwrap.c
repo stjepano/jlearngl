@@ -7,6 +7,11 @@ void jglViewport(jGLint x, jGLint y, jGLsizei w, jGLsizei h) {
     glViewport((GLint) x, (GLint) y, (GLsizei) w, (GLsizei) h);
 }
 
+jboolean jglPolygonMode(jGLenum mode) {
+    glPolygonMode(GL_FRONT_AND_BACK, (GLenum) mode);
+    return glGetError() == GL_NO_ERROR;
+}
+
 void jglClearNamedFramebufferiv(jGLuint framebuffer, jGLenum buffer, jGLint drawbuffer, const jGLint *value) {
     glClearNamedFramebufferiv((GLuint) framebuffer, (GLenum) buffer, (GLint) drawbuffer, (const GLint*) value);
 }
@@ -155,8 +160,13 @@ jboolean jglVertexArrayVertexBuffer(jGLuint vao_id, jGLuint binding_index, jGLui
     return glGetError() == GL_NO_ERROR;
 }
 
+jboolean jglVertexArrayIndexBuffer(jGLuint vao_id, jGLuint buffer_id) {
+    glVertexArrayElementBuffer((GLuint) vao_id, (GLuint) buffer_id);
+    return glGetError() == GL_NO_ERROR;
+}
+
 jboolean jglVertexArrayVertexAttrib(jGLuint vao_id, jGLuint attrib_index, jGLuint buffer_binding_index, jGLint num_component,
-    jGLenum component_type, jboolean normalized, jGLuint offset) {
+                                    jGLenum component_type, jboolean normalized, jGLuint offset) {
 
     glVertexArrayAttribFormat((GLuint)vao_id, (GLuint)attrib_index, (GLint)num_component,
         (GLenum)component_type, (GLboolean) (normalized ? GL_TRUE : GL_FALSE), (GLuint)offset);
@@ -181,4 +191,8 @@ void jglDeleteVertexArray(jGLuint vao_id) {
 
 void jglDrawArrays(jGLenum mode, jGLint first, jGLsizei count) {
     glDrawArrays((GLenum) mode, (GLint)first, (GLsizei) count);
+}
+
+void jglDrawElements(jGLenum mode, jGLsizei count, jGLenum type, jlong offset) {
+    glDrawElements((GLenum) mode, (GLsizei) count, (GLenum) type, (const GLvoid*)offset);
 }

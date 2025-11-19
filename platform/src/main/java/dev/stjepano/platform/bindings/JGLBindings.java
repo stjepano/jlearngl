@@ -11,6 +11,9 @@ interface JGLBindings {
     void jglViewport(int x, int y, int width, int height);
 
     @NativeBinding
+    boolean jglPolygonMode(int mode);
+
+    @NativeBinding
     void jglClearNamedFramebufferiv(int framebuffer, int buffer, int drawbuffer, MemorySegment valuePtr);
 
     @NativeBinding
@@ -61,6 +64,9 @@ interface JGLBindings {
     boolean jglVertexArrayVertexBuffer(int vaoId, int bindingIndex, int bufferId, long offset, int stride);
 
     @NativeBinding
+    boolean jglVertexArrayIndexBuffer(int vaoId, int indexBuffer);
+
+    @NativeBinding
     boolean jglVertexArrayVertexAttrib(int vaoId, int attribIndex, int bufferBindingIndex, int numComponent,
                                        int componentType, boolean normalized, int offset);
 
@@ -72,5 +78,8 @@ interface JGLBindings {
 
     @NativeBinding
     void jglDrawArrays(int mode, int first, int count);
+
+    @NativeBinding
+    void jglDrawElements(int mode, int count, int type, long offset);
 }
 

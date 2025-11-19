@@ -19,6 +19,13 @@ public class OpenGLImpl implements OpenGL {
     }
 
     @Override
+    public void polygonMode(GLPolygonRasterMode mode) {
+        if (!JGL.jglPolygonMode(mode.glEnumValue())) {
+            throw new OpenGLException("Failed to set polygon raster mode " + mode);
+        }
+    }
+
+    @Override
     public void clearColorBuffer(float r, float g, float b, float a) {
         try (StackAllocator stack = StackAllocator.push()) {
             MemorySegment valuePtr = stack.allocateFrom(ValueLayout.JAVA_FLOAT, r, g, b, a);
@@ -113,5 +120,13 @@ public class OpenGLImpl implements OpenGL {
     @Override
     public void drawArrays(GLPrimitive primitiveType, int first, int count) {
         JGL.jglDrawArrays(primitiveType.glEnumValue(), first, count);
+    }
+
+    @Override
+    public void drawElements(GLPrimitive primitiveType, int count, GLDataType indexType, long offset) {
+        if (!(indexType == GLDataType.UNSIGNED_BYTE || indexType == GLDataType.UNSIGNED_SHORT || indexType == GLDataType.UNSIGNED_INT)) {
+            throw new OpenGLException("indexType not supported");
+        }
+        JGL.jglDrawElements(primitiveType.glEnumValue(), count, indexType.glEnumValue(), offset);
     }
 }
