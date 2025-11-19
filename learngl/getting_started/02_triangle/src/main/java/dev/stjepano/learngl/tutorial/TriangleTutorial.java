@@ -26,10 +26,10 @@ public class TriangleTutorial {
             gl.polygonMode(currentMode);
 
             float[] vertices = new float[] {
-                    -0.5f, 0.5f, 0.0f, // top left
-                    -0.5f, -0.5f, 0.0f, // bottom left
-                    0.5f, -0.5f, 0.0f, // bottom right
-                    0.5f, 0.5f, 0.0f // top right
+                    -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, // top left
+                    -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom left
+                    0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, // bottom right
+                    0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 1.0f // top right
             };
             int[] indices = new int[] {
                     0, 1, 2,
@@ -48,10 +48,9 @@ public class TriangleTutorial {
             Program program = gl.createProgram(vertexShaderSrc, fragmentShaderSrc);
 
             VertexArray vao = gl.createVertexArray();
-            int attribLocation = 0;
-            vao.vertexBuffer(0, vertexBuffer, 0,  3 * (int)GLDataType.FLOAT.byteSize());
-            vao.vertexAttrib(attribLocation, 0, 3, GLDataType.FLOAT, false,  0);
-            vao.toggleAttrib(attribLocation, true);
+            vao.vertexBuffer(0, vertexBuffer, 0,  6 * (int)GLDataType.FLOAT.byteSize());
+            vao.vertexAttrib(0, 0, 3, GLDataType.FLOAT, false,  0);
+            vao.vertexAttrib(1, 0, 3, GLDataType.FLOAT, false, 3 * (int)GLDataType.FLOAT.byteSize());
             vao.indexBuffer(indexBuffer);
 
             while (!window.shouldClose()) {
