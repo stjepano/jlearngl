@@ -25,6 +25,7 @@
             <option value="$PROJECT_DIR$/learngl/getting_started/01_window" />
             <option value="$PROJECT_DIR$/learngl/getting_started/02_triangle" />
             <option value="$PROJECT_DIR$/platform" />
+            <option value="$PROJECT_DIR$/platform-processor" />
           </set>
         </option>
       </GradleProjectSettings>

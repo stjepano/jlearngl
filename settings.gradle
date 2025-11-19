@@ -1,4 +1,5 @@
 rootProject.name = 'jlearngl'
+include 'platform-processor'
 include 'platform'
 include 'learngl:getting_started:01_window'
 include 'learngl:getting_started:02_triangle'

@@ -1,6 +1,5 @@
 package dev.stjepano.platform.impl.opengl;
 
-import dev.stjepano.platform.impl.NativePlatform;
 import dev.stjepano.platform.opengl.Buffer;
 import dev.stjepano.platform.opengl.BufferStorageFlags;
 import dev.stjepano.platform.opengl.MapAccessFlags;
@@ -9,7 +8,7 @@ import dev.stjepano.platform.opengl.OpenGLException;
 import java.lang.foreign.MemorySegment;
 
 final class BufferImpl implements Buffer {
-    private int glId;
+    /* package */ int glId;
     private final long size;
     private final BufferStorageFlags flags;
 
@@ -32,7 +31,7 @@ final class BufferImpl implements Buffer {
     @Override
     public void update(long offset, long size, MemorySegment data) {
         checkValid();
-        if (!NativePlatform.jglNamedBufferSubData(glId, offset, size, data)) {
+        if (!JGL.jglNamedBufferSubData(glId, offset, size, data)) {
             throw new OpenGLException("Failed to update buffer!");
         }
     }
@@ -40,7 +39,7 @@ final class BufferImpl implements Buffer {
     @Override
     public MemorySegment map(long offset, long length, MapAccessFlags flags) {
         checkValid();
-        MemorySegment segment = NativePlatform.jglMapNamedBufferRange(glId, offset, length, flags.glFlags());
+        MemorySegment segment = JGL.jglMapNamedBufferRange(glId, offset, length, flags.glFlags());
         if (segment.address() == 0L) {
             throw new OpenGLException("Failed to map buffer!");
         }
@@ -50,7 +49,7 @@ final class BufferImpl implements Buffer {
     @Override
     public void unmap() {
         checkValid();
-        if (!NativePlatform.jglUnmapNamedBuffer(glId)) {
+        if (!JGL.jglUnmapNamedBuffer(glId)) {
             throw new OpenGLException("Failed to unmap buffer!");
         }
     }
@@ -58,7 +57,7 @@ final class BufferImpl implements Buffer {
     @Override
     public void flushMappedBufferRange(long offset, long length) {
         checkValid();
-        if (!NativePlatform.jglFlushMappedNamedBufferRange(glId, offset, length)) {
+        if (!JGL.jglFlushMappedNamedBufferRange(glId, offset, length)) {
             throw new OpenGLException("Failed to flush buffer range!");
         }
     }
@@ -72,7 +71,7 @@ final class BufferImpl implements Buffer {
     @Override
     public void delete() {
         if (glId > 0) {
-            NativePlatform.jglDeleteBuffers(glId);
+            JGL.jglDeleteBuffers(glId);
             glId = 0;
         }
     }

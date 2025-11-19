@@ -41,4 +41,29 @@ public interface OpenGL {
     /// @throws OpenGLException on OpenGL error
     Buffer createBuffer(long byteSize, BufferStorageFlags flags, MemorySegment data);
 
+    /// Creates a program from given vertex and fragment shader source (GLSL).
+    ///
+    /// NOTE: this creates the program, creates shaders and compiles them, links shaders with program
+    ///
+    /// @param vertexShaderSource the GLSL source code of vertex shader
+    /// @param fragmentShaderSource the GLSL source code of fragment shader
+    /// @throws OpenGLException in case of any OpenGL error or compilation/linking errors
+    Program createProgram(String vertexShaderSource, String fragmentShaderSource);
+
+    /// Create a {@link VertexArray} object
+    VertexArray createVertexArray();
+
+    /// Bind a vertex array for the draw calls.
+    /// @param vao the {@link VertexArray} object
+    void bindVertexArray(VertexArray vao);
+
+    /// Bind a program for the draw calls.
+    /// @param program the {@link Program} object
+    void bindProgram(Program program);
+
+    /// Draw command which draws from vertex buffers in the currently bound vertex array.
+    /// @param primitiveType the type of primitive to render
+    /// @param first the starting index in the enabled buffers
+    /// @param count the number of elements from enabled buffers
+    void drawArrays(GLPrimitive primitiveType, int first, int count);
 }
