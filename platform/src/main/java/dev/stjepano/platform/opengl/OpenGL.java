@@ -1,4 +1,6 @@
-package dev.stjepano.platform;
+package dev.stjepano.platform.opengl;
+
+import java.lang.foreign.MemorySegment;
 
 /// Interface to select OpenGL functions or combinations of functions.
 ///
@@ -25,5 +27,18 @@ public interface OpenGL {
 
     /// Clear depth and stencil of the default framebuffer.
     void clearStencil(int stencilValue);
+
+    /// Create a buffer but do not copy any data to it. Same as calling `createBuffer(byteSize, flags, NULL)`.
+    /// @param byteSize capacity of the buffer
+    /// @param flags specifies intended usage of the buffer
+    /// @throws OpenGLException on OpenGL error
+    Buffer createBuffer(long byteSize, BufferStorageFlags flags);
+
+    /// Create a buffer and copy data to it.
+    /// @param byteSize capacity of the buffer
+    /// @param flags specifies intended usage of the buffer
+    /// @param data pointer to data that will be copied to the buffer
+    /// @throws OpenGLException on OpenGL error
+    Buffer createBuffer(long byteSize, BufferStorageFlags flags, MemorySegment data);
 
 }

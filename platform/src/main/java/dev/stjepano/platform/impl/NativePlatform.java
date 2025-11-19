@@ -45,6 +45,12 @@ public final class NativePlatform {
     private static MethodHandle hGlClearNamedFramebufferuiv;
     private static MethodHandle hGlClearNamedFramebufferfv;
     private static MethodHandle hGlClearNamedFramebufferfi;
+    private static MethodHandle hGlNamedBufferSubData;
+    private static MethodHandle hGlMapNamedBufferRange;
+    private static MethodHandle hGlUnmapNamedBuffer;
+    private static MethodHandle hGlFlushMappedNamedBufferRange;
+    private static MethodHandle hGlDeleteBuffers;
+    private static MethodHandle hGlCreateBufferWithStorage;
 
     private static final int ERROR_BUFFER_SZ = 1024;
 
@@ -136,6 +142,12 @@ public final class NativePlatform {
         hGlClearNamedFramebufferuiv = findFunction("jglClearNamedFramebufferuiv", FunctionDescriptor.ofVoid(ValueLayout.JAVA_INT, ValueLayout.JAVA_INT, ValueLayout.JAVA_INT, ValueLayout.ADDRESS));
         hGlClearNamedFramebufferfv = findFunction("jglClearNamedFramebufferfv", FunctionDescriptor.ofVoid(ValueLayout.JAVA_INT, ValueLayout.JAVA_INT, ValueLayout.JAVA_INT, ValueLayout.ADDRESS));
         hGlClearNamedFramebufferfi = findFunction("jglClearNamedFramebufferfi", FunctionDescriptor.ofVoid(ValueLayout.JAVA_INT, ValueLayout.JAVA_INT, ValueLayout.JAVA_INT, ValueLayout.JAVA_FLOAT, ValueLayout.JAVA_INT));
+        hGlNamedBufferSubData = findFunction("jglNamedBufferSubData", FunctionDescriptor.of(ValueLayout.JAVA_BOOLEAN, ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG, ValueLayout.ADDRESS));
+        hGlMapNamedBufferRange = findFunction("jglMapNamedBufferRange", FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT));
+        hGlUnmapNamedBuffer = findFunction("jglUnmapNamedBuffer", FunctionDescriptor.of(ValueLayout.JAVA_BOOLEAN, ValueLayout.JAVA_INT));
+        hGlFlushMappedNamedBufferRange = findFunction("jglFlushMappedNamedBufferRange", FunctionDescriptor.of(ValueLayout.JAVA_BOOLEAN, ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG));
+        hGlDeleteBuffers = findFunction("jglDeleteBuffers", FunctionDescriptor.ofVoid(ValueLayout.JAVA_INT));
+        hGlCreateBufferWithStorage = findFunction("jglCreateBufferWithStorage", FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT, ValueLayout.ADDRESS));
     }
 
     public static MemorySegment glfw3WindowCreate(WindowSettings settings) {
@@ -280,6 +292,54 @@ public final class NativePlatform {
     public static void jglClearNamedFramebufferfi(int framebuffer, int buffer, int drawbuffer, float depthValue, int stencilValue) {
         try {
             hGlClearNamedFramebufferfi.invokeExact(framebuffer, buffer, drawbuffer, depthValue, stencilValue);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static boolean jglNamedBufferSubData(int buffer, long offset, long size, MemorySegment data) {
+        try {
+            return (boolean) hGlNamedBufferSubData.invokeExact(buffer, offset, size, data);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static MemorySegment jglMapNamedBufferRange(int buffer, long offset, long length, int accessflags) {
+        try {
+            return (MemorySegment) hGlMapNamedBufferRange.invokeExact(buffer, offset, length, accessflags);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static boolean jglUnmapNamedBuffer(int buffer) {
+        try {
+            return (boolean) hGlUnmapNamedBuffer.invokeExact(buffer);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static boolean jglFlushMappedNamedBufferRange(int buffer, long offset, long length) {
+        try {
+            return (boolean) hGlFlushMappedNamedBufferRange.invokeExact(buffer, offset, length);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void jglDeleteBuffers(int buffer) {
+        try {
+            hGlDeleteBuffers.invokeExact(buffer);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static int jglCreateBufferWithStorage(long byteSize, int storageflags, MemorySegment data) {
+        try {
+            return (int) hGlCreateBufferWithStorage.invokeExact(byteSize, storageflags, data);
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }

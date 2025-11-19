@@ -1,7 +1,11 @@
-package dev.stjepano.platform.impl;
+package dev.stjepano.platform.impl.opengl;
 
-import dev.stjepano.platform.OpenGL;
+import dev.stjepano.platform.impl.NativePlatform;
+import dev.stjepano.platform.opengl.Buffer;
+import dev.stjepano.platform.opengl.BufferStorageFlags;
+import dev.stjepano.platform.opengl.OpenGL;
 import dev.stjepano.platform.memory.StackAllocator;
+import dev.stjepano.platform.opengl.OpenGLException;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -43,7 +47,21 @@ public class OpenGLImpl implements OpenGL {
     public void clearStencil(int stencilValue) {
         try (StackAllocator stack = StackAllocator.push()) {
             MemorySegment valuePtr = stack.allocateFrom(ValueLayout.JAVA_INT, stencilValue);
-            NativePlatform.jglClearNamedFramebufferfv(0, GL_STENCIL, 0, valuePtr);
+            NativePlatform.jglClearNamedFramebufferiv(0, GL_STENCIL, 0, valuePtr);
         }
+    }
+
+    @Override
+    public Buffer createBuffer(long byteSize, BufferStorageFlags flags) {
+        return createBuffer(byteSize, flags, MemorySegment.NULL);
+    }
+
+    @Override
+    public Buffer createBuffer(long byteSize, BufferStorageFlags flags, MemorySegment data) {
+        int bufferId = NativePlatform.jglCreateBufferWithStorage(byteSize, flags.glFlags(), data);
+        if (bufferId == 0) {
+            throw new OpenGLException("Failed to create buffer and set storage!");
+        }
+        return new BufferImpl(bufferId, byteSize, flags);
     }
 }

@@ -10,7 +10,7 @@ repositories {
 }
 
 application {
-    mainClass = 'dev.stjepano.learngl.tutorial.WindowTutorial'
+    mainClass = 'dev.stjepano.learngl.tutorial.TriangleTutorial'
 }
 
 dependencies {

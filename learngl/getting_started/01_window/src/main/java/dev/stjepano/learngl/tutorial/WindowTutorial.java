@@ -1,8 +1,9 @@
-package dev.stjepano.learngl.window;
+package dev.stjepano.learngl.tutorial;
 
 import dev.stjepano.platform.*;
+import dev.stjepano.platform.opengl.OpenGL;
 
-public class Main {
+public class WindowTutorial {
     static void main() {
         WindowSettings windowSettings = WindowSettings.builder()
                 .size(1920, 1080)

@@ -1,6 +1,8 @@
 package dev.stjepano.platform.impl;
 
 import dev.stjepano.platform.*;
+import dev.stjepano.platform.impl.opengl.OpenGLImpl;
+import dev.stjepano.platform.opengl.OpenGL;
 
 import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;

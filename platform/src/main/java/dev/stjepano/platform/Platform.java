@@ -1,6 +1,7 @@
 package dev.stjepano.platform;
 
 import dev.stjepano.platform.impl.PlatformImpl;
+import dev.stjepano.platform.opengl.OpenGL;
 
 @SuppressWarnings("unused")
 public interface Platform extends AutoCloseable {
