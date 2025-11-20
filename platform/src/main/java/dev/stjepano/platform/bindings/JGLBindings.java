@@ -49,6 +49,45 @@ interface JGLBindings {
                          MemorySegment errorBuf, long errorBufSize);
 
     @NativeBinding
+    void jglProgramUniform1i(int programId, int location, int i);
+
+    @NativeBinding
+    void jglProgramUniform1iv(int programId, int location, int count, MemorySegment valuePtr);
+
+    @NativeBinding
+    void jglProgramUniform1f(int programId, int location, float x);
+
+    @NativeBinding
+    void jglProgramUniform1fv(int programId, int location, int count, MemorySegment valuePtr);
+
+    @NativeBinding
+    void jglProgramUniform2f(int programId, int location, float x, float y);
+
+    @NativeBinding
+    void jglProgramUniform2fv(int programId, int location, int count, MemorySegment valuePtr);
+
+    @NativeBinding
+    void jglProgramUniform3f(int programId, int location, float x, float y, float z);
+
+    @NativeBinding
+    void jglProgramUniform3fv(int programId, int location, int count, MemorySegment valuePtr);
+
+    @NativeBinding
+    void jglProgramUniform4f(int programId, int location, float x, float y, float z, float w);
+
+    @NativeBinding
+    void jglProgramUniform4fv(int programId, int location, int count, MemorySegment valuePtr);
+
+    @NativeBinding
+    void jglProgramUniformMatrix2fv(int programId, int location, int count, boolean transpose, MemorySegment valuePtr);
+
+    @NativeBinding
+    void jglProgramUniformMatrix3fv(int programId, int location, int count, boolean transpose, MemorySegment valuePtr);
+
+    @NativeBinding
+    void jglProgramUniformMatrix4fv(int programId, int location, int count, boolean transpose, MemorySegment valuePtr);
+
+    @NativeBinding
     void jglBindProgram(int programId);
 
     @NativeBinding

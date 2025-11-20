@@ -140,6 +140,61 @@ void jglBindProgram(jGLuint program_id) {
     glUseProgram((GLuint) program_id);
 }
 
+void jglProgramUniform1i(jGLuint program_id, jGLint location, jGLint i) {
+    glProgramUniform1i((GLuint) program_id, (GLint) location, (GLint) i);
+}
+
+void jglProgramUniform1iv(jGLuint program_id, jGLint location, jGLsizei count, const jGLint *value_ptr) {
+    glProgramUniform1iv((GLuint) program_id, (GLint) location, (GLsizei) count, (const GLint*) value_ptr);
+}
+
+void jglProgramUniform1f(jGLuint program_id, jGLint location, jGLfloat x) {
+    glProgramUniform1f((GLuint) program_id, (GLint) location, (GLfloat) x);
+}
+
+void jglProgramUniform1fv(jGLuint program_id, jGLint location, jGLsizei count, const jGLfloat *value_ptr) {
+    glProgramUniform1fv((GLuint) program_id, (GLint) location, (GLsizei) count, (const GLfloat*) value_ptr);
+}
+
+void jglProgramUniform2f(jGLuint program_id, jGLint location, jGLfloat x, jGLfloat y) {
+    glProgramUniform2f((GLuint) program_id, (GLint) location, (GLfloat) x, (GLfloat) y);
+}
+
+void jglProgramUniform2fv(jGLuint program_id, jGLint location, jGLsizei count, const jGLfloat *value_ptr) {
+    glProgramUniform2fv((GLuint) program_id, (GLint) location, (GLsizei) count, (const GLfloat*) value_ptr);
+}
+
+void jglProgramUniform3f(jGLuint program_id, jGLint location, jGLfloat x, jGLfloat y, jGLfloat z) {
+    glProgramUniform3f((GLuint) program_id, (GLint) location, (GLfloat) x, (GLfloat) y, (GLfloat) z);
+}
+
+void jglProgramUniform3fv(jGLuint program_id, jGLint location, jGLsizei count, const jGLfloat *value_ptr) {
+    glProgramUniform3fv((GLuint) program_id, (GLint) location, (GLsizei) count, (const GLfloat*) value_ptr);
+}
+
+void jglProgramUniform4f(jGLuint program_id, jGLint location, jGLfloat x, jGLfloat y, jGLfloat z, jGLfloat w) {
+    glProgramUniform4f((GLuint) program_id, (GLint) location, (GLfloat) x, (GLfloat) y, (GLfloat) z, (GLfloat) w);
+}
+
+void jglProgramUniform4fv(jGLuint program_id, jGLint location, jGLsizei count, const jGLfloat *value_ptr) {
+    glProgramUniform4fv((GLuint) program_id, (GLint) location, (GLsizei) count, (const GLfloat*) value_ptr);
+}
+
+void jglProgramUniformMatrix2fv(jGLuint program_id, jGLint location, jGLsizei count, jboolean transpose,
+    const jGLfloat *value_ptr) {
+    glProgramUniformMatrix2fv((GLuint)program_id, (GLint)location, (GLsizei) count, (GLboolean) transpose, (const GLfloat*) value_ptr);
+}
+
+void jglProgramUniformMatrix3fv(jGLuint program_id, jGLint location, jGLsizei count, jboolean transpose,
+    const jGLfloat *value_ptr) {
+    glProgramUniformMatrix3fv((GLuint)program_id, (GLint)location, (GLsizei) count, (GLboolean) transpose, (const GLfloat*) value_ptr);
+}
+
+void jglProgramUniformMatrix4fv(jGLuint program_id, jGLint location, jGLsizei count, jboolean transpose,
+    const jGLfloat *value_ptr) {
+    glProgramUniformMatrix4fv((GLuint)program_id, (GLint)location, (GLsizei) count, (GLboolean) transpose, (const GLfloat*) value_ptr);
+}
+
 void jglDeleteProgram(jGLuint program_id) {
     GLuint gl_program_id = (GLuint) program_id;
     glDeleteProgram(gl_program_id);

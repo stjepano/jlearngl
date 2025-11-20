@@ -35,6 +35,21 @@ PLATFORM_API jGLuint jglCreateBufferWithStorage(jGLsizeiptr byteSize, jGLbitfiel
 
 PLATFORM_API jGLuint jglCreateProgramVF(const char* vertex_shader_src, const char* fragment_shader_src, char* error_buf, jlong error_buf_size);
 PLATFORM_API void jglBindProgram(jGLuint program_id);
+
+PLATFORM_API void jglProgramUniform1i(jGLuint program_id, jGLint location, jGLint i);
+PLATFORM_API void jglProgramUniform1iv(jGLuint program_id, jGLint location, jGLsizei count, const jGLint* value_ptr);
+PLATFORM_API void jglProgramUniform1f(jGLuint program_id, jGLint location, jGLfloat x);
+PLATFORM_API void jglProgramUniform1fv(jGLuint program_id, jGLint location, jGLsizei count, const jGLfloat* value_ptr);
+PLATFORM_API void jglProgramUniform2f(jGLuint program_id, jGLint location, jGLfloat x, jGLfloat y);
+PLATFORM_API void jglProgramUniform2fv(jGLuint program_id, jGLint location, jGLsizei count, const jGLfloat* value_ptr);
+PLATFORM_API void jglProgramUniform3f(jGLuint program_id, jGLint location, jGLfloat x, jGLfloat y, jGLfloat z);
+PLATFORM_API void jglProgramUniform3fv(jGLuint program_id, jGLint location, jGLsizei count, const jGLfloat* value_ptr);
+PLATFORM_API void jglProgramUniform4f(jGLuint program_id, jGLint location, jGLfloat x, jGLfloat y, jGLfloat z, jGLfloat w);
+PLATFORM_API void jglProgramUniform4fv(jGLuint program_id, jGLint location, jGLsizei count, const jGLfloat* value_ptr);
+PLATFORM_API void jglProgramUniformMatrix2fv(jGLuint program_id, jGLint location, jGLsizei count, jboolean transpose, const jGLfloat* value_ptr);
+PLATFORM_API void jglProgramUniformMatrix3fv(jGLuint program_id, jGLint location, jGLsizei count, jboolean transpose, const jGLfloat* value_ptr);
+PLATFORM_API void jglProgramUniformMatrix4fv(jGLuint program_id, jGLint location, jGLsizei count, jboolean transpose, const jGLfloat* value_ptr);
+
 PLATFORM_API void jglDeleteProgram(jGLuint program_id);
 
 PLATFORM_API jGLuint jglCreateVertexArray();
