@@ -1,0 +1,3 @@
+[submodule "platform/native/platform/external/stb"]
+	path = platform/native/platform/external/stb
+	url = https://github.com/nothings/stb.git

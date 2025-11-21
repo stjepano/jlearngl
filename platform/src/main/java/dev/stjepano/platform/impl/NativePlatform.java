@@ -4,6 +4,7 @@ import dev.stjepano.platform.Key;
 import dev.stjepano.platform.MButton;
 import dev.stjepano.platform.WindowSettings;
 import dev.stjepano.platform.impl.opengl.JGLInit;
+import dev.stjepano.platform.util.JSTBIInit;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -124,6 +125,7 @@ public final class NativePlatform {
         hGlfw3WindowSetShouldClose = findFunction("glfw3_window_set_should_close", FunctionDescriptor.ofVoid(ValueLayout.ADDRESS, ValueLayout.JAVA_BOOLEAN));
 
         JGLInit.init(linker, symbolLookup);
+        JSTBIInit.init(linker, symbolLookup);
     }
 
     public static MemorySegment glfw3WindowCreate(WindowSettings settings) {

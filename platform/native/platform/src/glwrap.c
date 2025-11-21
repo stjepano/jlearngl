@@ -1,5 +1,6 @@
 #include "glwrap.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <glad/glad.h>
 
@@ -242,6 +243,181 @@ jboolean jglVertexArrayToggleAttrib(jGLuint vao_id, jGLuint attrib_index, jboole
 void jglDeleteVertexArray(jGLuint vao_id) {
     GLuint gl_vao_id = (GLuint) vao_id;
     glDeleteVertexArrays(1, &gl_vao_id);
+}
+
+/// Parameter stream format: [paramCode:int][data:varies][paramCode:int][data:varies]...[0:int]
+/// Return 1 on success 0 on fail.
+static int configure_texture(GLuint texture_id, const void* params, GLsizeiptr paramsSize) {
+    (void) paramsSize;
+
+    if (params) {
+        const uint8_t* it = params;
+        GLint paramCode;
+        while ((paramCode = *(GLint*)it) != 0) {
+            GLenum parameter = (GLenum) paramCode;
+            it += sizeof(GLint);
+            switch (parameter) {
+                case GL_TEXTURE_MIN_FILTER: {
+                    GLint value = *(GLint*)it;
+                    it += sizeof(GLint);
+                    glTextureParameteri(texture_id, GL_TEXTURE_MIN_FILTER, value);
+                } break;
+                case GL_TEXTURE_MAG_FILTER: {
+                    GLint value = *(GLint*)it;
+                    it += sizeof(GLint);
+                    glTextureParameteri(texture_id, GL_TEXTURE_MAG_FILTER, value);
+                } break;
+                case GL_TEXTURE_WRAP_S: {
+                    GLint value = *(GLint*)it;
+                    it += sizeof(GLint);
+                    glTextureParameteri(texture_id, GL_TEXTURE_WRAP_S, value);
+                } break;
+                case GL_TEXTURE_WRAP_T: {
+                    GLint value = *(GLint*)it;
+                    it += sizeof(GLint);
+                    glTextureParameteri(texture_id, GL_TEXTURE_WRAP_T, value);
+                } break;
+                case GL_TEXTURE_BORDER_COLOR: {
+                    glTextureParameterfv(texture_id, GL_TEXTURE_BORDER_COLOR, (const GLfloat*) it);
+                    it += 4 * sizeof(GLfloat);
+                } break;
+                case GL_TEXTURE_MIN_LOD: {
+                    GLfloat val = *(GLfloat*) it;
+                    it += sizeof(GLfloat);
+                    glTextureParameterf(texture_id, GL_TEXTURE_MIN_LOD, val);
+                } break;
+                case GL_TEXTURE_MAX_LOD: {
+                    GLfloat val = *(GLfloat*) it;
+                    it += sizeof(GLfloat);
+                    glTextureParameterf(texture_id, GL_TEXTURE_MAX_LOD, val);
+                } break;
+                case GL_TEXTURE_LOD_BIAS: {
+                    GLfloat val = *(GLfloat*) it;
+                    it += sizeof(GLfloat);
+                    glTextureParameterf(texture_id, GL_TEXTURE_LOD_BIAS, val);
+                } break;
+                case GL_TEXTURE_BASE_LEVEL: {
+                    GLint value = *(GLint*)it;
+                    it += sizeof(GLint);
+                    glTextureParameteri(texture_id, GL_TEXTURE_BASE_LEVEL, value);
+                } break;
+                case GL_TEXTURE_MAX_LEVEL: {
+                    GLint value = *(GLint*)it;
+                    it += sizeof(GLint);
+                    glTextureParameteri(texture_id, GL_TEXTURE_MAX_LEVEL, value);
+                } break;
+                case GL_TEXTURE_MAX_ANISOTROPY: {
+                    GLfloat val = *(GLfloat*) it;
+                    it += sizeof(GLfloat);
+                    glTextureParameterf(texture_id, GL_TEXTURE_MAX_ANISOTROPY, val);
+                } break;
+                case GL_TEXTURE_COMPARE_MODE: {
+                    GLint value = *(GLint*)it;
+                    it += sizeof(GLint);
+                    glTextureParameteri(texture_id, GL_TEXTURE_COMPARE_MODE, value);
+                } break;
+                case GL_TEXTURE_COMPARE_FUNC: {
+                    GLint value = *(GLint*)it;
+                    it += sizeof(GLint);
+                    glTextureParameteri(texture_id, GL_TEXTURE_COMPARE_FUNC, value);
+                } break;
+                default:
+                    return 0;
+            }
+        }
+        if (glGetError() != GL_NO_ERROR) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+jGLuint jglCreateTexture2D(jGLint mipLevels, jGLenum internalFormat, jGLsizei width, jGLsizei height,
+    const void *parameterStream, jlong parameterStreamSize) {
+
+    GLuint texture_id;
+    glCreateTextures(GL_TEXTURE_2D, 1, &texture_id);
+    if (texture_id == 0) {
+        goto LError;
+    }
+
+    glTextureStorage2D(texture_id, (GLint) mipLevels, (GLenum) internalFormat, (GLsizei) width, (GLsizei) height);
+
+    if (!configure_texture(texture_id, parameterStream, parameterStreamSize)) {
+        goto LError;
+    }
+
+    goto LSuccess;
+LError:
+    if (texture_id) {
+        glDeleteTextures(1, &texture_id);
+    }
+    texture_id = 0;
+LSuccess:
+    return (jGLuint) texture_id;
+}
+
+jboolean jglTextureUpdateSubImage2D(jGLuint textureId, jGLint mipLevel, jGLint x, jGLint y, jGLsizei width,
+    jGLsizei height, jGLenum format, jGLenum type, jGLint rowAlignment, jGLint rowLength, const void *pixels) {
+
+    GLint old_alignment, old_row_length;
+    glGetIntegerv(GL_UNPACK_ALIGNMENT, &old_alignment);
+    glGetIntegerv(GL_UNPACK_ROW_LENGTH, &old_row_length);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, (GLint) rowAlignment);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, (GLint) rowLength);
+
+    glTextureSubImage2D((GLuint) textureId, (GLint) mipLevel,
+        (GLint) x, (GLint) y, (GLsizei) width, (GLsizei) height,
+        (GLenum) format, (GLenum) type, pixels);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, old_alignment);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, old_row_length);
+
+    return glGetError() == GL_NO_ERROR;
+}
+
+jboolean jglTextureUpdateSubImage2DBuffer(jGLuint textureId, jGLint mipLevel, jGLint x, jGLint y, jGLsizei width,
+    jGLsizei height, jGLenum format, jGLenum type, jGLint rowAlignment, jGLint rowLength, jGLuint bufferId,
+    jGLsizeiptr offset) {
+
+    GLint old_alignment, old_row_length;
+    glGetIntegerv(GL_UNPACK_ALIGNMENT, &old_alignment);
+    glGetIntegerv(GL_UNPACK_ROW_LENGTH, &old_row_length);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, (GLint) rowAlignment);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, (GLint) rowLength);
+
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, (GLuint) bufferId);
+
+    glTextureSubImage2D((GLuint) textureId, (GLint) mipLevel,
+        (GLint) x, (GLint) y, (GLsizei) width, (GLsizei) height,
+        (GLenum) format, (GLenum) type, (const void*) offset);
+
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, old_alignment);
+    glPixelStorei(GL_UNPACK_ROW_LENGTH, old_row_length);
+
+    return glGetError() == GL_NO_ERROR;
+}
+
+void jglTextureGenerateMipmaps(jGLuint textureId) {
+    glGenerateTextureMipmap((GLuint) textureId);
+}
+
+jboolean jglTextureConfigure(jGLuint textureId, const void *parameterStream, jlong parameterStreamSize) {
+    return (jboolean) configure_texture((GLuint) textureId, parameterStream, parameterStreamSize);
+}
+
+void jglDeleteTexture(jGLuint textureId) {
+    GLuint texture_id = (GLuint) textureId;
+    glDeleteTextures(1, &texture_id);
+}
+
+void jglBindTextureUnit(jGLuint unit, jGLuint textureId) {
+    glBindTextureUnit((GLuint) unit , (GLuint) textureId);
 }
 
 void jglDrawArrays(jGLenum mode, jGLint first, jGLsizei count) {

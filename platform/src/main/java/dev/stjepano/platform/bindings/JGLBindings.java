@@ -116,6 +116,35 @@ interface JGLBindings {
     void jglDeleteVertexArray(int vaoId);
 
     @NativeBinding
+    int jglCreateTexture2D(int mipLevels, int internalFormat, int width, int height, MemorySegment parameterStream, long parameterStreamSize);
+
+    @NativeBinding
+    boolean jglTextureUpdateSubImage2D(int textureId, int mipLevel,
+                                       int x, int y, int width, int height,
+                                       int format, int type,
+                                       int rowAlignment, int rowLength,
+                                       MemorySegment pixels);
+
+    @NativeBinding
+    boolean jglTextureUpdateSubImage2DBuffer(int textureId, int mipLevel,
+                                       int x, int y, int width, int height,
+                                       int format, int type,
+                                       int rowAlignment, int rowLength,
+                                       int bufferId, long offset);
+
+    @NativeBinding
+    void jglTextureGenerateMipmaps(int textureId);
+
+    @NativeBinding
+    boolean jglTextureConfigure(int textureId, MemorySegment parameterStream, long parameterStreamSize);
+
+    @NativeBinding
+    void jglDeleteTexture(int textureId);
+
+    @NativeBinding
+    void jglBindTextureUnit(int unit, int textureId);
+
+    @NativeBinding
     void jglDrawArrays(int mode, int first, int count);
 
     @NativeBinding

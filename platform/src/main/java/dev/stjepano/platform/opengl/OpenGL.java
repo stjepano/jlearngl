@@ -9,6 +9,8 @@ import java.lang.foreign.MemorySegment;
 @SuppressWarnings("unused")
 public interface OpenGL {
 
+    int ALL_MIPS = 0;
+
     /// Facade for glViewport function which sets the viewport.
     /// @param x Lower left corner in pixels
     /// @param y Lower left corner in pixels
@@ -57,6 +59,14 @@ public interface OpenGL {
     /// Create a {@link VertexArray} object
     VertexArray createVertexArray();
 
+    /// Create a texture.
+    /// @param mipLevels number of mip levels, 1 for no mipmapping. O/ALL_MIPS for all mipmap levels (auto calculated based on width and height)
+    /// @param internalFormat internal texture format
+    /// @param width the texture width (of mip level 0)
+    /// @param height the texture height (of mip level 0)
+    /// @param parameters the texture parameters
+    Texture2D createTexture2D(int mipLevels, GLTexture2DFormat internalFormat, int width, int height, Texture2DParameters parameters);
+
     /// Bind a vertex array for the draw calls.
     /// @param vao the {@link VertexArray} object
     void bindVertexArray(VertexArray vao);
@@ -64,6 +74,12 @@ public interface OpenGL {
     /// Bind a program for the draw calls.
     /// @param program the {@link Program} object
     void bindProgram(Program program);
+
+    /// Bind a 2D texture to specified unit.
+    /// @param unit texture unit (use 0-15 for max compatibility)
+    /// @param texture the 2D texture that is bound
+    void bindTextureUnit(int unit, Texture2D texture);
+
 
     /// Draw command which draws from vertex buffers in the currently bound vertex array.
     /// @param primitiveType the type of primitive to render

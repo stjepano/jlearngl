@@ -13,12 +13,13 @@ set(LIBSRC
         src/glfw3_wrapper.c
         src/platform.h
         src/platform.c
-
         external/glad/src/glad.c
         src/glwrap.h
         src/glwrap.c
+        src/stbwrap.h
+        src/stbwrap.c
 )
 add_library(${LIBNAME} SHARED ${LIBSRC})
 target_link_libraries(${LIBNAME} PRIVATE glfw OpenGL::GL)
-target_include_directories(${LIBNAME} PRIVATE external/glad/include)
+target_include_directories(${LIBNAME} PRIVATE external/glad/include external/stb)
 target_compile_options(${LIBNAME} PRIVATE -fvisibility=hidden)

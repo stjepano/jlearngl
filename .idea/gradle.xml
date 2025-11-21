@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
@@ -25,6 +26,7 @@
             <option value="$PROJECT_DIR$/learngl/getting_started/01_window" />
             <option value="$PROJECT_DIR$/learngl/getting_started/02_triangle" />
             <option value="$PROJECT_DIR$/learngl/getting_started/03_shaders" />
+            <option value="$PROJECT_DIR$/learngl/getting_started/04_textures" />
             <option value="$PROJECT_DIR$/platform" />
             <option value="$PROJECT_DIR$/platform-processor" />
           </set>

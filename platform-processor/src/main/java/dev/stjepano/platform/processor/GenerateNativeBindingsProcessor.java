@@ -49,7 +49,7 @@ public class GenerateNativeBindingsProcessor extends AbstractProcessor {
     record MethodParam(String name, String type) { }
     record Method(String name, String returnType, MethodParam[] params) { }
 
-    private List<Method> methods = new ArrayList<>(16);
+    private final List<Method> methods = new ArrayList<>(16);
 
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
@@ -79,13 +79,14 @@ public class GenerateNativeBindingsProcessor extends AbstractProcessor {
         String classAccess = annotation.classAccess();
 
         try {
-            generateClass(classAccess, packageName, targetClassName, element);
+            generateClass(classAccess, packageName, targetClassName);
         } catch (IOException e) {
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Failed to generate " + packageName + "." + targetClassName + ": " + e.getMessage());
         }
     }
 
     private void findMethods(TypeElement element) {
+        this.methods.clear();
         for (Element enclosed : element.getEnclosedElements()) {
             if (enclosed instanceof ExecutableElement method) {
                 if (method.getAnnotation(NativeBinding.class) != null) {
@@ -105,7 +106,7 @@ public class GenerateNativeBindingsProcessor extends AbstractProcessor {
         }
     }
 
-    private void generateClass(String classAccess, String packageName, String targetClassName, TypeElement element) throws IOException {
+    private void generateClass(String classAccess, String packageName, String targetClassName) throws IOException {
         JavaFileObject file = processingEnv.getFiler().createSourceFile(packageName + "." + targetClassName);
 
         try (IndentWriter pw = new IndentWriter(file.openWriter(), 4)) {

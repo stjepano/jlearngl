@@ -61,6 +61,23 @@ PLATFORM_API jboolean jglVertexArrayVertexAttrib(jGLuint vao_id, jGLuint attrib_
 PLATFORM_API jboolean jglVertexArrayToggleAttrib(jGLuint vao_id, jGLuint attrib_index, jboolean enabled);
 PLATFORM_API void jglDeleteVertexArray(jGLuint vao_id);
 
+
+PLATFORM_API jGLuint jglCreateTexture2D(jGLint mipLevels, jGLenum internalFormat, jGLsizei width, jGLsizei height, const void* parameterStream, jlong parameterStreamSize);
+PLATFORM_API jboolean jglTextureUpdateSubImage2D(jGLuint textureId, jGLint mipLevel,
+                                   jGLint x, jGLint y, jGLsizei width, jGLsizei height,
+                                   jGLenum format, jGLenum type,
+                                   jGLint rowAlignment, jGLint rowLength,
+                                   const void* pixels);
+PLATFORM_API jboolean jglTextureUpdateSubImage2DBuffer(jGLuint textureId, jGLint mipLevel,
+                                   jGLint x, jGLint y, jGLsizei width, jGLsizei height,
+                                   jGLenum format, jGLenum type,
+                                   jGLint rowAlignment, jGLint rowLength,
+                                   jGLuint bufferId, jGLsizeiptr offset);
+PLATFORM_API void jglTextureGenerateMipmaps(jGLuint textureId);
+PLATFORM_API jboolean jglTextureConfigure(jGLuint textureId, const void* parameterStream, jlong parameterStreamSize);
+PLATFORM_API void jglDeleteTexture(jGLuint textureId);
+PLATFORM_API void jglBindTextureUnit(jGLuint unit, jGLuint textureId);
+
 PLATFORM_API void jglDrawArrays(jGLenum mode, jGLint first, jGLsizei count);
 PLATFORM_API void jglDrawElements(jGLenum mode, jGLsizei count, jGLenum type, jlong offset);
 
