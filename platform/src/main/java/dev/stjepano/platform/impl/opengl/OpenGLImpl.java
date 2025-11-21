@@ -15,11 +15,12 @@ public class OpenGLImpl implements OpenGL {
     private static final int GL_DEPTH_AND_STENCIL = 0x84f9;
 
     private static final Texture2DParameters BASELINE_TEXTURE_PARAMETERS = Texture2DParameters.builder().build();
+    private static final SamplerParameters BASELINE_SAMPLER_PARAMETERS = SamplerParameters.builder().build();
 
-    public sealed interface TextureParameter { }
-    public record IntTextureParameter(int name, int value) implements TextureParameter { }
-    public record FloatTextureParameter(int name, float value) implements TextureParameter { }
-    public record BorderColorTextureParameter(int name, Texture2DParameters.BorderColor value) implements TextureParameter { }
+    public sealed interface GLParameter { }
+    public record IntParameter(int name, int value) implements GLParameter { }
+    public record FloatParameter(int name, float value) implements GLParameter { }
+    public record BorderColorParameter(int name, Float4 value) implements GLParameter { }
 
     public static final int GL_TEXTURE_MIN_FILTER = 0x2801;
     public static final int GL_TEXTURE_MAG_FILTER = 0x2800;
@@ -147,61 +148,69 @@ public class OpenGLImpl implements OpenGL {
         JGL.jglBindTextureUnit(unit, textureImpl.glId);
     }
 
-    public static List<TextureParameter> textureParametersDelta(Texture2DParameters parameters, Texture2DParameters referenceParameters) {
-        final List<TextureParameter> delta = new ArrayList<>(16);
+    @Override
+    public void bindSamplerUnit(int unit, Sampler sampler) {
+        if (!(sampler instanceof SamplerImpl samplerImpl)) {
+            throw new IllegalStateException("sampler not instance of SamplerImpl");
+        }
+        JGL.jglBindSamplerUnit(unit, samplerImpl.glId);
+    }
+
+    public static List<GLParameter> textureParametersDelta(Texture2DParameters parameters, Texture2DParameters referenceParameters) {
+        final List<GLParameter> delta = new ArrayList<>(16);
         if (parameters.minFilter() != referenceParameters.minFilter()) {
-            delta.add(new IntTextureParameter(GL_TEXTURE_MIN_FILTER, parameters.minFilter().glEnumValue()));
+            delta.add(new IntParameter(GL_TEXTURE_MIN_FILTER, parameters.minFilter().glEnumValue()));
         }
         if (parameters.magFilter() != referenceParameters.magFilter()) {
-            delta.add(new IntTextureParameter(GL_TEXTURE_MAG_FILTER, parameters.magFilter().glEnumValue()));
+            delta.add(new IntParameter(GL_TEXTURE_MAG_FILTER, parameters.magFilter().glEnumValue()));
         }
         if (parameters.wrapS() != referenceParameters.wrapS()) {
-            delta.add(new IntTextureParameter(GL_TEXTURE_WRAP_S, parameters.wrapS().glEnumValue()));
+            delta.add(new IntParameter(GL_TEXTURE_WRAP_S, parameters.wrapS().glEnumValue()));
         }
         if (parameters.wrapT() != referenceParameters.wrapT()) {
-            delta.add(new IntTextureParameter(GL_TEXTURE_WRAP_T, parameters.wrapT().glEnumValue()));
+            delta.add(new IntParameter(GL_TEXTURE_WRAP_T, parameters.wrapT().glEnumValue()));
         }
         if (!parameters.borderColor().equals(referenceParameters.borderColor())) {
-            delta.add(new BorderColorTextureParameter(GL_TEXTURE_BORDER_COLOR, parameters.borderColor()));
+            delta.add(new BorderColorParameter(GL_TEXTURE_BORDER_COLOR, parameters.borderColor()));
         }
         if (parameters.minLod() != referenceParameters.minLod()) {
-            delta.add(new FloatTextureParameter(GL_TEXTURE_MIN_LOD, parameters.minLod()));
+            delta.add(new FloatParameter(GL_TEXTURE_MIN_LOD, parameters.minLod()));
         }
         if (parameters.maxLod() != referenceParameters.maxLod()) {
-            delta.add(new FloatTextureParameter(GL_TEXTURE_MAX_LOD, parameters.maxLod()));
+            delta.add(new FloatParameter(GL_TEXTURE_MAX_LOD, parameters.maxLod()));
         }
         if (parameters.lodBias() != referenceParameters.lodBias()) {
-            delta.add(new FloatTextureParameter(GL_TEXTURE_LOD_BIAS, parameters.lodBias()));
+            delta.add(new FloatParameter(GL_TEXTURE_LOD_BIAS, parameters.lodBias()));
         }
         if (parameters.baseLevel() != referenceParameters.baseLevel()) {
-            delta.add(new IntTextureParameter(GL_TEXTURE_BASE_LEVEL, parameters.baseLevel()));
+            delta.add(new IntParameter(GL_TEXTURE_BASE_LEVEL, parameters.baseLevel()));
         }
         if (parameters.maxLevel() != referenceParameters.maxLevel()) {
-            delta.add(new IntTextureParameter(GL_TEXTURE_MAX_LEVEL, parameters.maxLevel()));
+            delta.add(new IntParameter(GL_TEXTURE_MAX_LEVEL, parameters.maxLevel()));
         }
         if (parameters.maxAnisotropy() != referenceParameters.maxAnisotropy()) {
-            delta.add(new FloatTextureParameter(GL_TEXTURE_MAX_ANISOTROPY, parameters.maxAnisotropy()));
+            delta.add(new FloatParameter(GL_TEXTURE_MAX_ANISOTROPY, parameters.maxAnisotropy()));
         }
         if (parameters.textureCompareMode() != referenceParameters.textureCompareMode()) {
-            delta.add(new IntTextureParameter(GL_TEXTURE_COMPARE_MODE, parameters.textureCompareMode().glEnumValue()));
+            delta.add(new IntParameter(GL_TEXTURE_COMPARE_MODE, parameters.textureCompareMode().glEnumValue()));
         }
         if (parameters.textureCompareFunc() != referenceParameters.textureCompareFunc()) {
-            delta.add(new IntTextureParameter(GL_TEXTURE_COMPARE_FUNC, parameters.textureCompareFunc().glEnumValue()));
+            delta.add(new IntParameter(GL_TEXTURE_COMPARE_FUNC, parameters.textureCompareFunc().glEnumValue()));
         }
         return delta;
     }
 
-    public static long calculateTextureParametersStreamSize(List<TextureParameter> delta) {
+    public static long calculateParametersStreamSize(List<GLParameter> delta) {
         long byteSize = 0;
         if (!delta.isEmpty()) {
             byteSize = ValueLayout.JAVA_INT.byteSize(); // for one extra int (terminator)
             for (var texParameter : delta) {
                 //noinspection IfCanBeSwitch
-                if (texParameter instanceof IntTextureParameter) {
+                if (texParameter instanceof IntParameter) {
                     byteSize += 2 * ValueLayout.JAVA_INT.byteSize();
-                } else if (texParameter instanceof FloatTextureParameter) {
+                } else if (texParameter instanceof FloatParameter) {
                     byteSize += ValueLayout.JAVA_INT.byteSize() + ValueLayout.JAVA_FLOAT.byteSize();
-                } else if (texParameter instanceof BorderColorTextureParameter) {
+                } else if (texParameter instanceof BorderColorParameter) {
                     byteSize += ValueLayout.JAVA_INT.byteSize() + 4 * ValueLayout.JAVA_FLOAT.byteSize();
                 } else {
                     throw new RuntimeException("Unsupported texture parameter type: " + texParameter.getClass().getName());
@@ -211,30 +220,68 @@ public class OpenGLImpl implements OpenGL {
         return byteSize;
     }
 
-    public static void encodeTextureParametersStream(List<TextureParameter> delta, MemorySegment stream) {
+    public static void encodeParametersStream(List<GLParameter> delta, MemorySegment stream) {
         long offset = 0;
         for (var texParameter : delta) {
             //noinspection IfCanBeSwitch
-            if (texParameter instanceof IntTextureParameter(int name, int value)) {
+            if (texParameter instanceof IntParameter(int name, int value)) {
                 stream.set(ValueLayout.JAVA_INT, offset, name);
                 stream.set(ValueLayout.JAVA_INT, offset + ValueLayout.JAVA_INT.byteSize(), value);
                 offset += 2 * ValueLayout.JAVA_INT.byteSize();
-            } else if (texParameter instanceof FloatTextureParameter(int name, float value)) {
+            } else if (texParameter instanceof FloatParameter(int name, float value)) {
                 stream.set(ValueLayout.JAVA_INT, offset, name);
                 stream.set(ValueLayout.JAVA_FLOAT, offset + ValueLayout.JAVA_INT.byteSize(), value);
                 offset += ValueLayout.JAVA_INT.byteSize() + ValueLayout.JAVA_FLOAT.byteSize();
-            } else if (texParameter instanceof BorderColorTextureParameter(int name, Texture2DParameters.BorderColor color)) {
+            } else if (texParameter instanceof BorderColorParameter(int name, Float4 color)) {
                 stream.set(ValueLayout.JAVA_INT, offset, name);
-                stream.set(ValueLayout.JAVA_FLOAT, offset + ValueLayout.JAVA_INT.byteSize(), color.r());
-                stream.set(ValueLayout.JAVA_FLOAT, offset + ValueLayout.JAVA_INT.byteSize() + ValueLayout.JAVA_FLOAT.byteSize(), color.g());
-                stream.set(ValueLayout.JAVA_FLOAT, offset + ValueLayout.JAVA_INT.byteSize() + 2 * ValueLayout.JAVA_FLOAT.byteSize(), color.b());
-                stream.set(ValueLayout.JAVA_FLOAT, offset + ValueLayout.JAVA_INT.byteSize() + 3 * ValueLayout.JAVA_FLOAT.byteSize(), color.a());
+                stream.set(ValueLayout.JAVA_FLOAT, offset + ValueLayout.JAVA_INT.byteSize(), color.x());
+                stream.set(ValueLayout.JAVA_FLOAT, offset + ValueLayout.JAVA_INT.byteSize() + ValueLayout.JAVA_FLOAT.byteSize(), color.y());
+                stream.set(ValueLayout.JAVA_FLOAT, offset + ValueLayout.JAVA_INT.byteSize() + 2 * ValueLayout.JAVA_FLOAT.byteSize(), color.z());
+                stream.set(ValueLayout.JAVA_FLOAT, offset + ValueLayout.JAVA_INT.byteSize() + 3 * ValueLayout.JAVA_FLOAT.byteSize(), color.w());
                 offset += ValueLayout.JAVA_INT.byteSize() + 4 * ValueLayout.JAVA_FLOAT.byteSize();
             } else {
                 throw new RuntimeException("Unsupported texture parameter type: " + texParameter.getClass().getName());
             }
         }
         stream.set(ValueLayout.JAVA_INT, offset, 0);
+    }
+
+    public static List<GLParameter> samplerParametersDelta(SamplerParameters parameters, SamplerParameters referenceParameters) {
+        final List<GLParameter> delta = new ArrayList<>(16);
+        if (parameters.minFilter() != referenceParameters.minFilter()) {
+            delta.add(new IntParameter(GL_TEXTURE_MIN_FILTER, parameters.minFilter().glEnumValue()));
+        }
+        if (parameters.magFilter() != referenceParameters.magFilter()) {
+            delta.add(new IntParameter(GL_TEXTURE_MAG_FILTER, parameters.magFilter().glEnumValue()));
+        }
+        if (parameters.wrapS() != referenceParameters.wrapS()) {
+            delta.add(new IntParameter(GL_TEXTURE_WRAP_S, parameters.wrapS().glEnumValue()));
+        }
+        if (parameters.wrapT() != referenceParameters.wrapT()) {
+            delta.add(new IntParameter(GL_TEXTURE_WRAP_T, parameters.wrapT().glEnumValue()));
+        }
+        if (!parameters.borderColor().equals(referenceParameters.borderColor())) {
+            delta.add(new BorderColorParameter(GL_TEXTURE_BORDER_COLOR, parameters.borderColor()));
+        }
+        if (parameters.minLod() != referenceParameters.minLod()) {
+            delta.add(new FloatParameter(GL_TEXTURE_MIN_LOD, parameters.minLod()));
+        }
+        if (parameters.maxLod() != referenceParameters.maxLod()) {
+            delta.add(new FloatParameter(GL_TEXTURE_MAX_LOD, parameters.maxLod()));
+        }
+        if (parameters.lodBias() != referenceParameters.lodBias()) {
+            delta.add(new FloatParameter(GL_TEXTURE_LOD_BIAS, parameters.lodBias()));
+        }
+        if (parameters.maxAnisotropy() != referenceParameters.maxAnisotropy()) {
+            delta.add(new FloatParameter(GL_TEXTURE_MAX_ANISOTROPY, parameters.maxAnisotropy()));
+        }
+        if (parameters.textureCompareMode() != referenceParameters.textureCompareMode()) {
+            delta.add(new IntParameter(GL_TEXTURE_COMPARE_MODE, parameters.textureCompareMode().glEnumValue()));
+        }
+        if (parameters.textureCompareFunc() != referenceParameters.textureCompareFunc()) {
+            delta.add(new IntParameter(GL_TEXTURE_COMPARE_FUNC, parameters.textureCompareFunc().glEnumValue()));
+        }
+        return delta;
     }
 
     @Override
@@ -250,11 +297,11 @@ public class OpenGLImpl implements OpenGL {
         }
         try (StackAllocator stack = StackAllocator.push()) {
             MemorySegment textureParameterStream = MemorySegment.NULL;
-            List<TextureParameter> delta = textureParametersDelta(parameters, BASELINE_TEXTURE_PARAMETERS);
+            List<GLParameter> delta = textureParametersDelta(parameters, BASELINE_TEXTURE_PARAMETERS);
             if (!delta.isEmpty()) {
-                long deltaStreamSize = calculateTextureParametersStreamSize(delta);
+                long deltaStreamSize = calculateParametersStreamSize(delta);
                 textureParameterStream = stack.allocate(deltaStreamSize, 8);
-                encodeTextureParametersStream(delta, textureParameterStream);
+                encodeParametersStream(delta, textureParameterStream);
             }
 
             int glId = JGL.jglCreateTexture2D(mipLevels, internalFormat.glEnumValue(), width, height, textureParameterStream, textureParameterStream.byteSize());
@@ -263,6 +310,26 @@ public class OpenGLImpl implements OpenGL {
             }
 
             return new Texture2DImpl(glId, width, height, mipLevels, internalFormat, parameters);
+        }
+    }
+
+    @Override
+    public Sampler createSampler(SamplerParameters parameters) {
+        try (StackAllocator stack = StackAllocator.push()) {
+            MemorySegment samplerParametersStream = MemorySegment.NULL;
+            List<GLParameter> delta = samplerParametersDelta(parameters, BASELINE_SAMPLER_PARAMETERS);
+            if (!delta.isEmpty()) {
+                long deltaStreamSize = calculateParametersStreamSize(delta);
+                samplerParametersStream = stack.allocate(deltaStreamSize, 8);
+                encodeParametersStream(delta, samplerParametersStream);
+            }
+
+            int glId = JGL.jglCreateSampler(samplerParametersStream, samplerParametersStream.byteSize());
+            if (glId == 0) {
+                throw new OpenGLException("Failed to create sampler.");
+            }
+
+            return new SamplerImpl(glId, parameters);
         }
     }
 

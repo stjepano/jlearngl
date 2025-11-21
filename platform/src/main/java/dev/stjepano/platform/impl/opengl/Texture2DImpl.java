@@ -113,12 +113,12 @@ class Texture2DImpl implements Texture2D {
     @Override
     public void configure(Texture2DParameters parameters) {
         checkDeleted();
-        List<OpenGLImpl.TextureParameter> delta = OpenGLImpl.textureParametersDelta(parameters, this.parameters);
+        List<OpenGLImpl.GLParameter> delta = OpenGLImpl.textureParametersDelta(parameters, this.parameters);
         if (!delta.isEmpty()) {
-            long deltaStreamSize = OpenGLImpl.calculateTextureParametersStreamSize(delta);
+            long deltaStreamSize = OpenGLImpl.calculateParametersStreamSize(delta);
             try (StackAllocator stack = StackAllocator.push()) {
                 MemorySegment stream = stack.allocate(deltaStreamSize, 8);
-                OpenGLImpl.encodeTextureParametersStream(delta, stream);
+                OpenGLImpl.encodeParametersStream(delta, stream);
 
                 if (!JGL.jglTextureConfigure(glId, stream, stream.byteSize())) {
                     throw new OpenGLException("Failed to configure 2D texture.");

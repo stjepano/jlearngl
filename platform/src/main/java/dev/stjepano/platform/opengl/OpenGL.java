@@ -67,6 +67,10 @@ public interface OpenGL {
     /// @param parameters the texture parameters
     Texture2D createTexture2D(int mipLevels, GLTexture2DFormat internalFormat, int width, int height, Texture2DParameters parameters);
 
+    /// Create a sampler.
+    /// @param parameters the sampler parameters
+    Sampler createSampler(SamplerParameters parameters);
+
     /// Bind a vertex array for the draw calls.
     /// @param vao the {@link VertexArray} object
     void bindVertexArray(VertexArray vao);
@@ -79,6 +83,11 @@ public interface OpenGL {
     /// @param unit texture unit (use 0-15 for max compatibility)
     /// @param texture the 2D texture that is bound
     void bindTextureUnit(int unit, Texture2D texture);
+
+    /// Bind a sampler to texture unit.
+    /// @param unit the texture unit (use 0-15 for max compatibility)
+    /// @param sampler the sampler used by shaders on the texture unit
+    void bindSamplerUnit(int unit, Sampler sampler);
 
 
     /// Draw command which draws from vertex buffers in the currently bound vertex array.

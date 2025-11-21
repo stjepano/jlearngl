@@ -1,6 +1,6 @@
 package dev.stjepano.platform.opengl;
 
-public record Texture2DParameters(
+public record SamplerParameters(
         GLTextureMinFilter minFilter,
         GLTextureMagFilter magFilter,
         GLTextureWrap wrapS,
@@ -9,8 +9,6 @@ public record Texture2DParameters(
         float minLod,
         float maxLod,
         float lodBias,
-        int baseLevel,
-        int maxLevel,
         float maxAnisotropy,
         GLTextureCompareMode textureCompareMode,
         GLCompareFunc textureCompareFunc
@@ -28,8 +26,6 @@ public record Texture2DParameters(
         private float minLod = -1000;
         private float maxLod = 1000;
         private float lodBias = 0.0f;
-        private int baseLevel = 0;
-        private int maxLevel = 1000;
         private float maxAnisotropy = 1.0f;
         private GLTextureCompareMode textureCompareMode = GLTextureCompareMode.NONE;
         private GLCompareFunc textureCompareFunc = GLCompareFunc.LEQUAL;
@@ -69,14 +65,6 @@ public record Texture2DParameters(
             return this;
         }
 
-        /// Specify base and max mipmap levels.
-        /// Default is baseLevel = 0, maxLevel = 1000.
-        public Builder levels(int baseLevel, int maxLevel) {
-            this.baseLevel = baseLevel;
-            this.maxLevel = maxLevel;
-            return this;
-        }
-
         /// Control lod levels and bias used during sampling.
         /// Default minLod = -1000, maxLod = 1000, bias = 0.0.
         public Builder lod(float minLod, float maxLod, float bias) {
@@ -102,8 +90,8 @@ public record Texture2DParameters(
         }
 
         /// Build the texture parameters.
-        public Texture2DParameters build() {
-            return new Texture2DParameters(
+        public SamplerParameters build() {
+            return new SamplerParameters(
                     minFilter,
                     magFilter,
                     wrapS,
@@ -112,8 +100,6 @@ public record Texture2DParameters(
                     minLod,
                     maxLod,
                     lodBias,
-                    baseLevel,
-                    maxLevel,
                     maxAnisotropy,
                     textureCompareMode,
                     textureCompareFunc
@@ -128,7 +114,7 @@ public record Texture2DParameters(
     }
 
     /// Return a builder with values set to values from specified texture parameters.
-    public static Builder builder(Texture2DParameters parameters) {
+    public static Builder builder(SamplerParameters parameters) {
         Builder builder = new Builder();
         builder.minFilter = parameters.minFilter();
         builder.magFilter = parameters.magFilter();
@@ -138,9 +124,6 @@ public record Texture2DParameters(
         builder.minLod = parameters.minLod();
         builder.maxLod = parameters.maxLod();
         builder.lodBias = parameters.lodBias();
-        builder.baseLevel = parameters.baseLevel();
-        builder.maxLevel = parameters.maxLevel();
-        builder.maxAnisotropy = parameters.maxAnisotropy();
         builder.textureCompareMode = parameters.textureCompareMode();
         builder.textureCompareFunc = parameters.textureCompareFunc();
         return builder;

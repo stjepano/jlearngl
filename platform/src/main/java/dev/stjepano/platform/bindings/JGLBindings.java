@@ -139,10 +139,22 @@ interface JGLBindings {
     boolean jglTextureConfigure(int textureId, MemorySegment parameterStream, long parameterStreamSize);
 
     @NativeBinding
+    int jglCreateSampler(MemorySegment parameterStream, long parameterStreamSize);
+
+    @NativeBinding
+    boolean jglSamplerConfigure(int samplerId, MemorySegment parameterStream, long parameterStreamSize);
+
+    @NativeBinding
+    void jglDeleteSampler(int samplerId);
+
+    @NativeBinding
     void jglDeleteTexture(int textureId);
 
     @NativeBinding
     void jglBindTextureUnit(int unit, int textureId);
+
+    @NativeBinding
+    void jglBindSamplerUnit(int unit, int samplerId);
 
     @NativeBinding
     void jglDrawArrays(int mode, int first, int count);

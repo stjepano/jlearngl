@@ -78,6 +78,11 @@ PLATFORM_API jboolean jglTextureConfigure(jGLuint textureId, const void* paramet
 PLATFORM_API void jglDeleteTexture(jGLuint textureId);
 PLATFORM_API void jglBindTextureUnit(jGLuint unit, jGLuint textureId);
 
+PLATFORM_API jGLuint jglCreateSampler(const void* parameterStream, jlong parameterStreamSize);
+PLATFORM_API jboolean jglSamplerConfigure(jGLuint samplerId, const void* parameterStream, jlong parameterStreamSize);
+PLATFORM_API void jglDeleteSampler(jGLuint samplerId);
+PLATFORM_API void jglBindSamplerUnit(jGLuint unit, jGLuint samplerId);
+
 PLATFORM_API void jglDrawArrays(jGLenum mode, jGLint first, jGLsizei count);
 PLATFORM_API void jglDrawElements(jGLenum mode, jGLsizei count, jGLenum type, jlong offset);
 
