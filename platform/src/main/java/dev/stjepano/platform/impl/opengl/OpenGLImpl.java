@@ -26,6 +26,7 @@ public class OpenGLImpl implements OpenGL {
     public static final int GL_TEXTURE_MAG_FILTER = 0x2800;
     public static final int GL_TEXTURE_WRAP_S = 0x2802;
     public static final int GL_TEXTURE_WRAP_T = 0x2803;
+    public static final int GL_TEXTURE_WRAP_R = 0x8072;
     public static final int GL_TEXTURE_BORDER_COLOR = 0x1004;
     public static final int GL_TEXTURE_MIN_LOD = 0x813A;
     public static final int GL_TEXTURE_MAX_LOD = 0x813B;
@@ -259,6 +260,9 @@ public class OpenGLImpl implements OpenGL {
         }
         if (parameters.wrapT() != referenceParameters.wrapT()) {
             delta.add(new IntParameter(GL_TEXTURE_WRAP_T, parameters.wrapT().glEnumValue()));
+        }
+        if (parameters.wrapR() != referenceParameters.wrapR()) {
+            delta.add(new IntParameter(GL_TEXTURE_WRAP_R, parameters.wrapR().glEnumValue()));
         }
         if (!parameters.borderColor().equals(referenceParameters.borderColor())) {
             delta.add(new BorderColorParameter(GL_TEXTURE_BORDER_COLOR, parameters.borderColor()));

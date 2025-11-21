@@ -5,6 +5,7 @@ public record SamplerParameters(
         GLTextureMagFilter magFilter,
         GLTextureWrap wrapS,
         GLTextureWrap wrapT,
+        GLTextureWrap wrapR,
         Float4 borderColor,
         float minLod,
         float maxLod,
@@ -22,6 +23,7 @@ public record SamplerParameters(
         private GLTextureMagFilter magFilter = GLTextureMagFilter.LINEAR;
         private GLTextureWrap wrapS = GLTextureWrap.REPEAT;
         private GLTextureWrap wrapT = GLTextureWrap.REPEAT;
+        private GLTextureWrap wrapR = GLTextureWrap.REPEAT;
         private Float4 borderColor = new Float4(0, 0, 0, 0);
         private float minLod = -1000;
         private float maxLod = 1000;
@@ -30,31 +32,38 @@ public record SamplerParameters(
         private GLTextureCompareMode textureCompareMode = GLTextureCompareMode.NONE;
         private GLCompareFunc textureCompareFunc = GLCompareFunc.LEQUAL;
 
-        /// Specify texture minification filter (when texture on screen is smaller than image).
+        /// Specify sampler minification filter (when texture on screen is smaller than image).
         /// Default is NEAREST_MIPMAP_LINEAR.
         public Builder minFilter(GLTextureMinFilter filter) {
             this.minFilter = filter;
             return this;
         }
 
-        /// Specify texture magnification filter (when texture on screen is larger than image).
+        /// Specify sampler magnification filter (when texture on screen is larger than image).
         /// Default is LINEAR.
         public Builder magFilter(GLTextureMagFilter filter) {
             this.magFilter = filter;
             return this;
         }
 
-        /// Specify texture behaviour when S coordinate wraps
+        /// Specify sampler behaviour when S coordinate wraps
         /// Default is REPEAT.
         public Builder wrapS(GLTextureWrap wrap) {
             this.wrapS = wrap;
             return this;
         }
 
-        /// Specify texture behaviour when T coordinate wraps
+        /// Specify sampler behaviour when T coordinate wraps
         /// Default is REPEAT.
         public Builder wrapT(GLTextureWrap wrap) {
             this.wrapT = wrap;
+            return this;
+        }
+
+        /// Specify sampler behaviour when R coordinate wraps.
+        /// Default is REPEAT.
+        public Builder wrapR(GLTextureWrap wrap) {
+            this.wrapR = wrap;
             return this;
         }
 
@@ -89,13 +98,14 @@ public record SamplerParameters(
             return this;
         }
 
-        /// Build the texture parameters.
+        /// Build the sampler parameters.
         public SamplerParameters build() {
             return new SamplerParameters(
                     minFilter,
                     magFilter,
                     wrapS,
                     wrapT,
+                    wrapR,
                     borderColor,
                     minLod,
                     maxLod,
@@ -120,10 +130,12 @@ public record SamplerParameters(
         builder.magFilter = parameters.magFilter();
         builder.wrapS = parameters.wrapS();
         builder.wrapT = parameters.wrapT();
+        builder.wrapR = parameters.wrapR();
         builder.borderColor = parameters.borderColor();
         builder.minLod = parameters.minLod();
         builder.maxLod = parameters.maxLod();
         builder.lodBias = parameters.lodBias();
+        builder.maxAnisotropy = parameters.maxAnisotropy();
         builder.textureCompareMode = parameters.textureCompareMode();
         builder.textureCompareFunc = parameters.textureCompareFunc();
         return builder;

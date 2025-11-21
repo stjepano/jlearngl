@@ -390,6 +390,12 @@ static int configure_sampler(GLuint sampler_id, const void *params, GLsizeiptr p
                     glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_T, value);
                 }
                 break;
+                case GL_TEXTURE_WRAP_R: {
+                    GLint value = *(GLint *) it;
+                    it += sizeof(GLint);
+                    glSamplerParameteri(sampler_id, GL_TEXTURE_WRAP_R, value);
+                }
+                break;
                 case GL_TEXTURE_BORDER_COLOR: {
                     glSamplerParameterfv(sampler_id, GL_TEXTURE_BORDER_COLOR, (const GLfloat *) it);
                     it += 4 * sizeof(GLfloat);
