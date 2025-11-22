@@ -29,6 +29,7 @@
             <option value="$PROJECT_DIR$/learngl/getting_started/04_texture_samplers" />
             <option value="$PROJECT_DIR$/learngl/getting_started/04_textures" />
             <option value="$PROJECT_DIR$/learngl/getting_started/05_transformations" />
+            <option value="$PROJECT_DIR$/learngl/getting_started/06_coordinate_systems" />
             <option value="$PROJECT_DIR$/math" />
             <option value="$PROJECT_DIR$/platform" />
             <option value="$PROJECT_DIR$/platform-processor" />
