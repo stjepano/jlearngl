@@ -1,6 +1,7 @@
 package dev.stjepano.learngl.tutorial;
 
 import dev.stjepano.math.Projection;
+import dev.stjepano.math.Transform;
 import dev.stjepano.platform.*;
 import dev.stjepano.platform.util.JavaResources;
 import dev.stjepano.platform.util.PixelImage;
@@ -25,8 +26,11 @@ public class TransformationsTutorial {
             gl.viewport(0, 0, window.framebufferWidth(), window.framebufferHeight());
 
             float aspect = (float) window.framebufferWidth() / (float) window.framebufferHeight();
-            Projection projection = new Projection();
-            projection.ortho(2.0f, aspect, 0.0f, 10.0f);
+            Projection projection = new Projection()
+                    .setOrtho(2.0f, aspect, 0.0f, 10.0f);
+
+            Transform transform = new Transform()
+                    .setPosition(0.5f, -0.3f, 0.0f);
 
             float[] vertices = new float[] {
                     // top left
@@ -60,11 +64,13 @@ public class TransformationsTutorial {
 
             Program program = gl.createProgram(JavaResources.loadIntoString("/shaders/vertex.glsl"),
                     JavaResources.loadIntoString("/shaders/fragment.glsl"));
-            float[] array = new float[16];
-            projection.toFloatArray(array);
-            program.setMat4Array(0, true, array);
-            program.setInt(2, 0);   // texture unit 0
-            program.setInt(3, 1);   // texture unit 1
+            float[] projectionArray = new float[16];
+            projection.toMatrixFloatArray(projectionArray);
+            program.setMat4Array(0, true, projectionArray);
+            program.setInt(3, 0);   // texture unit 0
+            program.setInt(4, 1);   // texture unit 1
+            float[] worldArray = new float[16];
+
 
             final Texture2DParameters defaultTextureParameters = Texture2DParameters.builder()
                     .build();
@@ -93,6 +99,9 @@ public class TransformationsTutorial {
             float brightness;
 
             Time time = platform.time();
+            float rotationSpeed = (float) Math.toRadians(90.0f);
+
+            double t0 = time.seconds();
 
             while (!window.shouldClose()) {
                 platform.pollEvents();
@@ -102,7 +111,11 @@ public class TransformationsTutorial {
                 }
                 gl.clearColorBuffer(0.11f, 0.12f, 0.13f, 1.0f);
                 brightness = 1.0f - (float)Math.abs(0.2f * Math.cos(2.0f * time.seconds()));
-                program.setFloat(1, brightness);
+                program.setFloat(2, brightness);
+
+                transform.toMatrixFloatArray(worldArray, 0);
+                transform.rotateZ(rotationSpeed * (float)time.frameDeltaSeconds());
+                program.setMat4Array(1, true, worldArray);
 
                 gl.bindProgram(program);
                 gl.bindTextureUnit(0, containerTexture); // texture bound to texture unit 0
@@ -114,6 +127,12 @@ public class TransformationsTutorial {
 
                 window.swapBuffers();
             }
+
+            double t1 = time.seconds();
+
+            double deltaTime = t1 - t0;
+            double framesPerSecond = ((double) time.frameIndex()) / deltaTime;
+            IO.println("FPS: " + framesPerSecond);
 
             sampler.delete();
             faceTexture.delete();

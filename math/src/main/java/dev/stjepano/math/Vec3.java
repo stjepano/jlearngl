@@ -123,6 +123,17 @@ public final class Vec3 {
         return this;
     }
 
+    /// Cross product: this = this x Vec3(x, y, z)
+    public Vec3 cross(float x, float y, float z) {
+        float nx = this.y * z - this.z * y;
+        float ny = this.z * x - this.x * z;
+        float nz = this.x * y - this.y * x;
+        this.x = nx;
+        this.y = ny;
+        this.z = nz;
+        return this;
+    }
+
     /// Cross product: dest = a × b.
     public static void cross(Vec3 a, Vec3 b, Vec3 dest) {
         dest.x = a.y * b.z - a.z * b.y;
@@ -170,7 +181,7 @@ public final class Vec3 {
     }
 
     /// Rotate this vector with given quaternion. Make sure that quaternion is _unit length_.
-    public void rotate(Quaternion quaternion) {
+    public Vec3 rotate(Quaternion quaternion) {
         float cqx = -quaternion.x;
         float cqy = -quaternion.y;
         float cqz = -quaternion.z;
@@ -189,7 +200,35 @@ public final class Vec3 {
         this.x = w * cqx + x * cqw + y * cqz - z * cqy;
         this.y = w * cqy + y * cqw + z * cqx - x * cqz;
         this.z = w * cqz + z * cqw + x * cqy - y * cqx;
+        return this;
     }
+
+    /// Transform this vector with given 3x3 matrix.
+    ///
+    /// NOTE: Multiplication: this = matrix * this
+    public Vec3 transform(Mat3 matrix) {
+        float x = matrix.m00*this.x + matrix.m01*this.y + matrix.m02*this.z;
+        float y = matrix.m10*this.x + matrix.m11*this.y + matrix.m12*this.z;
+        float z = matrix.m20*this.x + matrix.m21*this.y + matrix.m22*this.z;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        return this;
+    }
+
+    /// Transform this vector with given 4x4 matrix.
+    ///
+    /// NOTE: multiplication: this = matrix * Vec4(this, 1)
+    public Vec3 transform(Mat4 matrix) {
+        float x = matrix.m00*this.x + matrix.m01*this.y + matrix.m02*this.z + matrix.m03;
+        float y = matrix.m10*this.x + matrix.m11*this.y + matrix.m12*this.z + matrix.m13;
+        float z = matrix.m20*this.x + matrix.m21*this.y + matrix.m22*this.z + matrix.m23;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        return this;
+    }
+
 
     /// Copy to float array. First component at dest + offset.
     public void toFloatArray(float[] dest, int offset) {

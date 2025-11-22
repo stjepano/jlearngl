@@ -8,9 +8,10 @@ out vec3 vColor;
 out vec2 vTexCoord;
 
 layout (location = 0) uniform mat4 uProjection;
+layout (location = 1) uniform mat4 uWorld;
 
 void main() {
-    gl_Position = uProjection * vec4(aPos.x, aPos.y, aPos.z, 1.0);
+    gl_Position = uProjection * uWorld * vec4(aPos.x, aPos.y, aPos.z, 1.0);
     vColor = aColor;
     vTexCoord = aTexCoord;
 }

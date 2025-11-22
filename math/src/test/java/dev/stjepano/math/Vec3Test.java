@@ -202,4 +202,27 @@ class Vec3Test {
         assertEquals(1.0f, v.y, EPSILON);
         assertEquals(0.0f, v.z, EPSILON);
     }
+
+    @Test
+    public void vec3Transform3x3() {
+        Mat3 identity = new Mat3();
+        Vec3 vec = new Vec3(2,3,4);
+        vec.transform(identity);
+        assertEquals(2.0f, vec.x, EPSILON);
+        assertEquals(3.0f, vec.y, EPSILON);
+        assertEquals(4.0f, vec.z, EPSILON);
+    }
+
+    @Test
+    public void vec3Transform4x4() {
+        Mat4 translation = new Mat4();
+        translation.setColumn(3, 2, 3, 4, 1);
+
+        Vec3 vec = new Vec3(5 ,5 ,5);
+        vec.transform(translation);
+
+        assertEquals(7.0f, vec.x, EPSILON);
+        assertEquals(8.0f, vec.y, EPSILON);
+        assertEquals(9.0f, vec.z, EPSILON);
+    }
 }

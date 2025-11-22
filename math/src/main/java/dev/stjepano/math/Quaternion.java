@@ -53,15 +53,155 @@ public final class Quaternion {
 
     /// Set quaternion from axis and angle.
     public Quaternion setAxisAngle(Vec3 normalizedAxis, float angleRad) {
+        return setAxisAngle(normalizedAxis.x, normalizedAxis.y, normalizedAxis.z, angleRad);
+    }
+
+    /// Set quaternion from axis coordinates and angle. Make sure that axis is normalized!
+    public Quaternion setAxisAngle(float axisX, float axisY, float axisZ, float angleRad) {
         float halfAngle = angleRad * 0.5f;
         float s = (float) Math.sin(halfAngle);
-        this.x = normalizedAxis.x * s;
-        this.y = normalizedAxis.y * s;
-        this.z = normalizedAxis.z * s;
+        this.x = axisX * s;
+        this.y = axisY * s;
+        this.z = axisZ * s;
         this.w = (float) Math.cos(halfAngle);
         return this;
     }
 
+    public Quaternion setRotationX(float angleRad) {
+        return setAxisAngle(1, 0, 0, angleRad);
+    }
+
+    public Quaternion setRotationY(float angleRad) {
+        return setAxisAngle(0, 1, 0, angleRad);
+    }
+
+    public Quaternion setRotationZ(float angleRad) {
+        return setAxisAngle(0, 0, 1, angleRad);
+    }
+
+    /// Set quaternion from rotation matrix (using Shepperd's algorithm)
+    public Quaternion setFromRotationMatrix(Mat3 m) {
+        return setFromRotationMatrix(m.m00, m.m01, m.m02, m.m10, m.m11, m.m12, m.m20, m.m21, m.m22);
+    }
+
+    /// Set quaternion from rotation matrix (using Shepperd's algorithm)
+    public Quaternion setFromRotationMatrix(Mat4 m) {
+        return setFromRotationMatrix(m.m00, m.m01, m.m02, m.m10, m.m11, m.m12, m.m20, m.m21, m.m22);
+    }
+
+    /// Set from rotation matrix coefficients (using Shepperd's algorithm)
+    public Quaternion setFromRotationMatrix(float m00, float m01, float m02, float m10, float m11, float m12, float m20, float m21, float m22) {
+        float trace = m00 + m11 + m22;
+        if (trace > 0.0f) {
+            float s = (float) Math.sqrt(trace + 1.0f) * 2.0f;
+            this.w = 0.25f * s;
+            this.x = (m21 - m12) / s;
+            this.y = (m02 - m20) / s;
+            this.z = (m10 - m01) / s;
+        } else if ((m00 > m11) && (m00 > m22)) {
+            float s = (float)Math.sqrt(1.0f + m00 - m11 - m22) * 2.0f; // s = 4 * qx
+            this.w = (m21 - m12) / s;
+            this.x = 0.25f * s;
+            this.y = (m01 + m10) / s;
+            this.z = (m02 + m20) / s;
+        } else if (m11 > m22) {
+            float s = (float)Math.sqrt(1.0f + m11 - m00 - m22) * 2.0f; // s = 4 * qy
+            this.w = (m02 - m20) / s;
+            this.x = (m01 + m10) / s;
+            this.y = 0.25f * s;
+            this.z = (m12 + m21) / s;
+        } else {
+            float s = (float)Math.sqrt(1.0f + m22 - m00 - m11) * 2.0f; // s = 4 * qz
+            this.w = (m10 - m01) / s;
+            this.x = (m02 + m20) / s;
+            this.y = (m12 + m21) / s;
+            this.z = 0.25f * s;
+        }
+
+        return this;
+    }
+
+    /// Set quaternion to represent euler angles rotation in YXZ order (Yaw-Pitch-Roll).
+    ///
+    /// NOTE: this is the most common rotation in games.
+    /// @param pitchRad pitch angle in radians (about X axis)
+    /// @param yawRad yaw angle in radians (about Y axis)
+    /// @param rollRad roll angle in radians (about Z axis)
+    /// @return reference to this
+    public Quaternion setEulerYXZ(float pitchRad, float yawRad, float rollRad) {
+        // NOTE: qRoll * qPitch * qYaw
+
+        float halfPitch = pitchRad * 0.5f;
+        float halfYaw = yawRad * 0.5f;
+        float halfRoll = rollRad * 0.5f;
+
+        float px = (float) Math.sin(halfPitch);
+        float pw = (float) Math.cos(halfPitch);
+        float yy = (float) Math.sin(halfYaw);
+        float yw = (float) Math.cos(halfYaw);
+        float ry = (float) Math.sin(halfRoll);
+        float rw = (float) Math.cos(halfRoll);
+
+        this.x = px*rw*yw - pw*ry*yy;
+        this.y = px*ry*yw + pw*rw*yy;
+        this.z = pw*ry*yw + px*rw*yy;
+        this.w = pw*rw*yw - px*ry*yy;
+        return this;
+    }
+
+    /// Set quaternion to represent euler angles rotation in ZXY order (Roll-Pitch-Yaw)
+    ///
+    /// NOTE: Very common, used by Unity.
+    /// @param pitchRad pitch angle in radians (about X axis)
+    /// @param yawRad yaw angle in radians (about Y axis)
+    /// @param rollRad roll angle in radians (about Z axis)
+    /// @return reference to this
+    public Quaternion setEulerZXY(float pitchRad, float yawRad, float rollRad) {
+        // NOTE: qYaw * qPitch * qRoll
+        float halfPitch = pitchRad * 0.5f;
+        float halfYaw = yawRad * 0.5f;
+        float halfRoll = rollRad * 0.5f;
+
+        float px = (float) Math.sin(halfPitch);
+        float pw = (float) Math.cos(halfPitch);
+        float yy = (float) Math.sin(halfYaw);
+        float yw = (float) Math.cos(halfYaw);
+        float ry = (float) Math.sin(halfRoll);
+        float rw = (float) Math.cos(halfRoll);
+
+        this.x = px*rw*yw + pw*ry*yy;
+        this.y = -px*ry*yw + pw*rw*yy;
+        this.z = pw*ry*yw - px*rw*yy;
+        this.w = pw*rw*yw + px*ry*yy;
+        return this;
+    }
+
+    /// Set quaternion to represent euler angles rotation in ZYX order (Roll-Yaw-Pitch).
+    ///
+    /// NOTE: Mostly used in space and aero simulations.
+    /// @param pitchRad pitch angle in radians (about X axis)
+    /// @param yawRad yaw angle in radians (about Y axis)
+    /// @param rollRad roll angle in radians (about Z axis)
+    /// @return reference to this
+    public Quaternion setEulerZYX(float pitchRad, float yawRad, float rollRad) {
+        // NOTE: qPitch * qYaw * qRoll
+        float halfPitch = pitchRad * 0.5f;
+        float halfYaw = yawRad * 0.5f;
+        float halfRoll = rollRad * 0.5f;
+
+        float px = (float) Math.sin(halfPitch);
+        float pw = (float) Math.cos(halfPitch);
+        float yy = (float) Math.sin(halfYaw);
+        float yw = (float) Math.cos(halfYaw);
+        float ry = (float) Math.sin(halfRoll);
+        float rw = (float) Math.cos(halfRoll);
+
+        this.x = px*rw*yw + pw*ry*yy;
+        this.y = -px*ry*yw + pw*rw*yy;
+        this.z = pw*ry*yw + px*rw*yy;
+        this.w = pw*rw*yw - px*ry*yy;
+        return this;
+    }
 
     /// Copy quaternion into new quaternion (does heap allocation).
     public Quaternion copy() {
@@ -110,10 +250,53 @@ public final class Quaternion {
 
     /// Multiplication: this = this * other
     public Quaternion mul(Quaternion other) {
+        // ox tw + ow tx + oz ty - oy tz
+        // oy tw - oz tx + ow ty + ox tz
+        // oz tw + oy tx - ox ty + ow tz
+        // ow tw - ox tx - oy ty - oz tz
         float x = this.w * other.x + this.x * other.w + this.y * other.z - this.z * other.y;
         float y = this.w * other.y + this.y * other.w + this.z * other.x - this.x * other.z;
         float z = this.w * other.z + this.z * other.w + this.x * other.y - this.y * other.x;
         float w = this.w * other.w - this.x * other.x - this.y * other.y - this.z * other.z;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.w = w;
+        return this;
+    }
+
+    /// Multiplication: this = this * Quaternion(qx, qy, qz, qw)
+    public Quaternion mul(float qx, float qy, float qz, float qw) {
+        float x = this.w * qx + this.x * qw + this.y * qz - this.z * qy;
+        float y = this.w * qy + this.y * qw + this.z * qx - this.x * qz;
+        float z = this.w * qz + this.z * qw + this.x * qy - this.y * qx;
+        float w = this.w * qw - this.x * qx - this.y * qy - this.z * qz;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.w = w;
+        return this;
+    }
+
+    /// Right side multiplication: this = other * this
+    public Quaternion preMul(Quaternion other) {
+        float x = other.x*this.w + other.w*this.x - other.z*this.y + other.y*this.z;
+        float y = other.y*this.w + other.z*this.x + other.w*this.y - other.x*this.z;
+        float z = other.z*this.w - other.y*this.x + other.x*this.y + other.w*this.z;
+        float w = other.w*this.w - other.x*this.x - other.y*this.y - other.z*this.z;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.w = w;
+        return this;
+    }
+
+    /// Right side multiplication: this = Quaternion(qx, qy, qz, qw) * this
+    public Quaternion preMul(float qx, float qy, float qz, float qw) {
+        float x = qx*this.w + qw*this.x - qz*this.y + qy*this.z;
+        float y = qy*this.w + qz*this.x + qw*this.y - qx*this.z;
+        float z = qz*this.w - qy*this.x + qx*this.y + qw*this.z;
+        float w = qw*this.w - qx*this.x - qy*this.y - qz*this.z;
         this.x = x;
         this.y = y;
         this.z = z;
@@ -153,6 +336,9 @@ public final class Quaternion {
     }
 
     /// Calculate basis vectors from quaternion ...
+    /// @param destX store the X vector (right vector in OpenGL convention). Can be null.
+    /// @param destY store the Y vector (up vector in OpenGL convention). Can be null.
+    /// @param destZ store the Z vector (_backward_ (negated forward) vector in OpenGL convention). Can be null.
     public void toBasis(Vec3 destX, Vec3 destY, Vec3 destZ) {
         float xx = this.x * this.x;
         float yy = this.y * this.y;
@@ -166,17 +352,61 @@ public final class Quaternion {
         float wy = this.w * this.y;
         float wz = this.w * this.z;
 
-        destX.x = 1 - 2 * (yy + zz);
-        destX.y = 2 * (xy + wz);
-        destX.z = 2 * (xz - wy);
+        if (destX != null) {
+            destX.x = 1 - 2 * (yy + zz);
+            destX.y = 2 * (xy + wz);
+            destX.z = 2 * (xz - wy);
+        }
 
-        destY.x = 2 * (xy - wz);
-        destY.y = 1 - 2 * (xx + zz);
-        destY.z = 2 * (yz + wx);
+        if (destY != null) {
+            destY.x = 2 * (xy - wz);
+            destY.y = 1 - 2 * (xx + zz);
+            destY.z = 2 * (yz + wx);
+        }
 
-        destZ.x = 2 * (xz + wy);
-        destZ.y = 2 * (yz - wx);
-        destZ.z = 1 - 2 * (xx + yy);
+        if (destZ != null) {
+            destZ.x = 2 * (xz + wy);
+            destZ.y = 2 * (yz - wx);
+            destZ.z = 1 - 2 * (xx + yy);
+        }
+    }
+
+    /// Convert quaternion to rotation matrix (3x3)
+    public void toRotationMatrix(Mat3 m) {
+        m.m00 = 1 - 2*(this.y*this.y + this.z*this.z);
+        m.m01 = 2*(this.x*this.y - this.w*this.z);
+        m.m02 = 2*(this.w*this.y + this.x*this.z);
+
+        m.m10 = 2*(this.x*this.y + this.w*this.z);
+        m.m11 = 1 - 2*(this.x*this.x + this.z*this.z);
+        m.m12 = 2*(-this.w*this.x + this.y*this.z);
+
+        m.m20 = 2*(-this.w*this.y + this.x*this.z);
+        m.m21 = 2*(this.w*this.x + this.y*this.z);
+        m.m22 = 1 - 2*(this.x*this.x + this.y*this.y);
+    }
+
+    /// Convert quaternion to rotation matrix (3x3)
+    public void toRotationMatrix(Mat4 m) {
+        m.m00 = 1 - 2*(this.y*this.y + this.z*this.z);
+        m.m01 = 2*(this.x*this.y - this.w*this.z);
+        m.m02 = 2*(this.w*this.y + this.x*this.z);
+        m.m03 = 0;
+
+        m.m10 = 2*(this.x*this.y + this.w*this.z);
+        m.m11 = 1 - 2*(this.x*this.x + this.z*this.z);
+        m.m12 = 2*(-this.w*this.x + this.y*this.z);
+        m.m13 = 0;
+
+        m.m20 = 2*(-this.w*this.y + this.x*this.z);
+        m.m21 = 2*(this.w*this.x + this.y*this.z);
+        m.m22 = 1 - 2*(this.x*this.x + this.y*this.y);
+        m.m23 = 0;
+
+        m.m30 = 0;
+        m.m31 = 0;
+        m.m32 = 0;
+        m.m33 = 1;
     }
 
     /// Calculates axis and angle of rotation.

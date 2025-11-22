@@ -1,7 +1,6 @@
 package dev.stjepano.math;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.util.Objects;
 
 public final class Projection {
@@ -9,8 +8,9 @@ public final class Projection {
 
 
     /// Call this if you do not want any projection transformation applied.
-    public void identity() {
+    public Projection setIdentity() {
         this.matrix.setIdentity();
+        return this;
     }
 
     /// Set projection to orthographic projection.
@@ -20,7 +20,7 @@ public final class Projection {
     /// @param top coordinate of top clipping plane
     /// @param dNear distance to near clipping plane
     /// @param dFar distance to far clipping plane
-    public void ortho(float left, float right, float bottom, float top, float dNear, float dFar) {
+    public Projection setOrtho(float left, float right, float bottom, float top, float dNear, float dFar) {
         float tx = -(right + left) / (right - left);
         float ty = -(top + bottom) / (top - bottom);
         float tz = -(dFar + dNear) / (dFar - dNear);
@@ -30,6 +30,7 @@ public final class Projection {
                 .setColumn(1, 0, 2.0f/(top - bottom), 0, 0)
                 .setColumn(2, 0, 0, -2.0f/(dFar - dNear), 0)
                 .setColumn(3, tx, ty, tz, 1);
+        return this;
     }
 
     /// Orthographic projection
@@ -37,12 +38,12 @@ public final class Projection {
     /// @param aspect the aspect ration of window as width/height
     /// @param dNear distance to near clipping plane
     /// @param dFar distance to far clipping plane
-    public void ortho(float width, float aspect, float dNear, float dFar) {
+    public Projection setOrtho(float width, float aspect, float dNear, float dFar) {
         float left = -width/2.0f;
         float right = -left;
         float bottom = left/aspect;
         float top = -bottom;
-        ortho(left, right, bottom, top, dNear, dFar);
+        return setOrtho(left, right, bottom, top, dNear, dFar);
     }
 
     /// Set perspective projection.
@@ -52,7 +53,7 @@ public final class Projection {
     /// @param top coordinate of top clipping plane
     /// @param dNear distance to near clipping plane
     /// @param dFar distance to far clipping plane
-    public void frustum(float left, float right, float bottom, float top, float dNear, float dFar) {
+    public Projection setFrustum(float left, float right, float bottom, float top, float dNear, float dFar) {
         float a = (right + left) / (right - left);
         float b = (top + bottom) / (top - bottom);
         float c = -(dFar + dNear) / (dFar - dNear);
@@ -63,6 +64,7 @@ public final class Projection {
                 .setColumn(1, 0, (2.0f * dNear) / (top - bottom), 0, 0)
                 .setColumn(2, a, b, c, -1)
                 .setColumn(3, 0, 0, d, 0);
+        return this;
     }
 
     /// Set the perspective matrix.
@@ -70,13 +72,13 @@ public final class Projection {
     /// @param aspect aspect ratio (width/height)
     /// @param dNear distance to near clipping plane
     /// @param dFar distance to far clipping plane
-    public void perspective(float fovYRad, float aspect, float dNear, float dFar) {
+    public Projection setPerspective(float fovYRad, float aspect, float dNear, float dFar) {
         float tanHalfFovY = (float)Math.tan(fovYRad / 2.0f);
         float top = dNear * tanHalfFovY;
         float bottom = -top;
         float right = top * aspect;
         float left = -right;
-        frustum(left, right, bottom, top, dNear, dFar);
+        return setFrustum(left, right, bottom, top, dNear, dFar);
     }
 
     /// Access the matrix ...
@@ -84,18 +86,25 @@ public final class Projection {
         return this.matrix;
     }
 
+    /// Copy to matrix `m`.
+    ///
+    /// NOTE: if you need the matrix you can get it through `matrix()` getter. Projection matrix is precalculated.
+    public void toMatrix(Mat4 m) {
+        m.set(this.matrix);
+    }
+
     /// Copy to float array. First component at dest + offset.
     ///
     /// **Row major order**
-    public void toFloatArray(float[] dest, int offset) {
+    public void toMatrixFloatArray(float[] dest, int offset) {
         this.matrix.toFloatArray(dest, offset);
     }
 
     /// Copy to float array.
     ///
     /// **Row major order**
-    public void toFloatArray(float[] dest) {
-        toFloatArray(dest, 0);
+    public void toMatrixFloatArray(float[] dest) {
+        toMatrixFloatArray(dest, 0);
     }
 
     /// Initialize Projection from float array, first component at src + offset.
