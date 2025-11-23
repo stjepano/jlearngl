@@ -20,6 +20,11 @@ public final class Vec3 {
         this.z = z;
     }
 
+    /// Copy constructor
+    public Vec3(Vec3 v) {
+        this(v.x, v.y, v.z);
+    }
+
     /// Copy into new object and return it.
     public Vec3 copy() {
         return new Vec3(this.x, this.y, this.z);

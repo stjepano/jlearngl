@@ -2,6 +2,8 @@ package dev.stjepano.math;
 
 import java.util.Objects;
 
+import static dev.stjepano.math.MathUtil.EPSILON8;
+
 /// Represents object's transformation in 3D space using:
 /// - position (Vec3) - translation
 /// - rotation (Quaternion) - orientation
@@ -119,9 +121,65 @@ public final class Transform {
         return this;
     }
 
+    /// Translates the transform current position in local coordinate system. Note that `z` is transformed in
+    /// forward direction.
+    public Transform translateLocal(float x, float y, float z) {
+        translateLocalBasis(x, y, -z);
+        return this;
+    }
+
+    /// Translates the transform current position in coordinate system defined by basis vectors. Note that `z` is
+    /// transformed in backward direction.
+    public Transform translateLocalBasis(float x, float y, float z) {
+        // 1. conjugate_rotation = conjugate(rotation)
+        float cqx = -rotation.x;
+        float cqy = -rotation.y;
+        float cqz = -rotation.z;
+        float cqw = rotation.w;
+
+        // 2. translation_as_quat = quaternion(x, y, z, 0)
+        float vqx = x;
+        float vqy = y;
+        float vqz = z;
+        float vqw = 0.0f;
+
+        // 3. temp = rotation * translation_as_quat
+        float tx = rotation.w * vqx + rotation.x * vqw + rotation.y * vqz - rotation.z * vqy;
+        float ty = rotation.w * vqy + rotation.y * vqw + rotation.z * vqx - rotation.x * vqz;
+        float tz = rotation.w * vqz + rotation.z * vqw + rotation.x * vqy - rotation.y * vqx;
+        float tw = rotation.w * vqw - rotation.x * vqx - rotation.y * vqy - rotation.z * vqz;
+
+        // 4. rotOffset = temp * conjugate_rotation
+        float rotOffsetX = tw * cqx + tx * cqw + ty * cqz - tz * cqy;
+        float rotOffsetY = tw * cqy + ty * cqw + tz * cqx - tx * cqz;
+        float rotOffsetZ = tw * cqz + tz * cqw + tx * cqy - ty * cqx;
+
+
+        // 3. position += rotOffset
+        this.position.x += rotOffsetX;
+        this.position.y += rotOffsetY;
+        this.position.z += rotOffsetZ;
+
+        return this;
+    }
+
     /// Translate the transform current position by given vector.
     public Transform translate(Vec3 offset) {
         this.position.add(offset);
+        return this;
+    }
+
+    /// Translates the transform current position in local coordinate system. Note that `z` is transformed in
+    /// forward direction.
+    public Transform translateLocal(Vec3 offset) {
+        this.translateLocal(offset.x, offset.y, offset.z);
+        return this;
+    }
+
+    /// Translates the transform current position in coordinate system defined by basis vectors. Note that `z` is
+    /// transformed in backward direction.
+    public Transform translateLocalBasis(Vec3 offset) {
+        this.translateLocalBasis(offset.x, offset.y, offset.z);
         return this;
     }
 
@@ -129,6 +187,20 @@ public final class Transform {
     public Transform rotate(Quaternion rot) {
         // World rotation: this.rotation = rot * this.rotation (premultiply)
         this.rotation.preMul(rot);
+        return this;
+    }
+
+    /// Rotate the transform in local coordinates (Z is pointing in forward direction).
+    public Transform rotateLocal(Quaternion rot) {
+        // Convert to axis angle and use that
+        this.rotation.mul(rot.x, rot.y, -rot.z, rot.w);
+        return this;
+    }
+
+    /// Rotate the transform in mathematical basis (Z is pointing in backward direction).
+    public Transform rotateLocalBasis(Quaternion rot) {
+        // Local rotation: this.rotation = this.rotation * rot
+        this.rotation.mul(rot);
         return this;
     }
 
@@ -143,6 +215,34 @@ public final class Transform {
         float qz = s * unitAxis.z;
         float qw = (float) Math.cos(halfAngle);
         this.rotation.preMul(qx, qy, qz, qw);
+        return this;
+    }
+
+    /// Rotate the transform in local coordinate system (note that in local coordinates forward is in negative Z basis).
+    /// Rotates by given angle about given _unit length_ axis.
+    public Transform rotateLocal(Vec3 unitAxis, float angleRad) {
+        float halfAngle = angleRad * 0.5f;
+        float s = (float) Math.sin(halfAngle);
+
+        float qx = s * unitAxis.x;
+        float qy = s * unitAxis.y;
+        float qz = s * -unitAxis.z;
+        float qw = (float) Math.cos(halfAngle);
+        this.rotation.mul(qx, qy, qz, qw);
+        return this;
+    }
+
+    /// Rotate the transform in local basis coordinate system.
+    /// Rotates by given angle about given _unit length_ axis.
+    public Transform rotateLocalBasis(Vec3 unitAxis, float angleRad) {
+        float halfAngle = angleRad * 0.5f;
+        float s = (float) Math.sin(halfAngle);
+
+        float qx = s * unitAxis.x;
+        float qy = s * unitAxis.y;
+        float qz = s * unitAxis.z;
+        float qw = (float) Math.cos(halfAngle);
+        this.rotation.mul(qx, qy, qz, qw);
         return this;
     }
 
@@ -163,6 +263,36 @@ public final class Transform {
     /// Rotate by `angleRad` about world Z axis.
     public Transform rotateZ(float angleRad) {
         return rotate(UNIT_Z, angleRad);
+    }
+
+    /// Rotate by `angleRad` about local X axis (right relative to transform).
+    public Transform rotateLocalX(float angleRad) {
+        return rotateLocal(UNIT_X, angleRad);
+    }
+
+    /// Rotate by `angleRad` about local basis X axis (right relative to viewer).
+    public Transform rotateLocalBasisX(float angleRad) {
+        return rotateLocalBasis(UNIT_X, angleRad);
+    }
+
+    /// Rotate by `angleRad` about local Y axis (up relative to transform).
+    public Transform rotateLocalY(float angleRad) {
+        return rotateLocal(UNIT_Y, angleRad);
+    }
+
+    /// Rotate by `angleRad` about local basis Y axis (up relative to viewer).
+    public Transform rotateLocalBasisY(float angleRad) {
+        return rotateLocalBasis(UNIT_Y, angleRad);
+    }
+
+    /// Rotate by `angleRad` about local Z axis (forward relative to transform).
+    public Transform rotateLocalZ(float angleRad) {
+        return rotateLocal(UNIT_Z, angleRad);
+    }
+
+    /// Rotate by `angleRad` about local basis Z axis (pointing to viewer).
+    public Transform rotateLocalBasisZ(float angleRad) {
+        return rotateLocalBasis(UNIT_Z, angleRad);
     }
 
     /// Scale by `x`, `y` and `z`.
@@ -202,7 +332,7 @@ public final class Transform {
                 .normalize();
 
         // 3. Handle case when direction is parallel to world up by picking perpendicular up vector
-        if (right.lengthSqr() < MathUtil.EPSILON) {
+        if (right.lengthSqr() < EPSILON8) {
             if (Math.abs(worldUp.y) < 0.9f) {
                 // worldUp is not Y dominant use Y
                 right.set(direction).cross(0, 1, 0).normalize();
@@ -273,7 +403,7 @@ public final class Transform {
         return getUpVector(null);
     }
 
-    /// Get the forward vector.
+    /// Get the forward vector. By OpenGL convention this is negative Z axis.
     /// @param forward store for forward vector. If null new object is allocated.
     /// @return _forward_ vector or, if _forward_ is null, new Vec3
     public Vec3 getForwardVector(Vec3 forward) {
@@ -288,6 +418,322 @@ public final class Transform {
     /// Get the forward vector - always allocate.
     public Vec3 getForwardVector() {
         return getForwardVector(null);
+    }
+
+    /// Apply the transformation to a position.
+    public Vec3 transformPosition(Vec3 pos) {
+        final float m00 = (1 - 2*(rotation.y * rotation.y + rotation.z * rotation.z))*scale.x;
+        final float m01 = 2*(rotation.x*rotation.y - rotation.w*rotation.z)*scale.y;
+        final float m02 = 2*(rotation.w*rotation.y + rotation.x*rotation.z)*scale.z;
+        final float m03 = this.position.x;
+
+        final float m10 = 2*(rotation.x*rotation.y + rotation.w*rotation.z)*scale.x;
+        final float m11 = (1 - 2*(rotation.x*rotation.x + rotation.z*rotation.z))*scale.y;
+        final float m12 = 2*((-rotation.w)*rotation.x + rotation.y*rotation.z)*scale.z;
+        final float m13 = this.position.y;
+
+        final float m20 = 2*((-rotation.w)*rotation.y + rotation.x*rotation.z)*scale.x;
+        final float m21 = 2*(rotation.w*rotation.x + rotation.y*rotation.z)*scale.y;
+        final float m22 = (1 - 2*(rotation.x*rotation.x + rotation.y*rotation.y))*scale.z;
+        final float m23 = this.position.z;
+
+        final float nx = m00 * pos.x + m01 * pos.y + m02 * pos.z + m03;
+        final float ny = m10 * pos.x + m11 * pos.y + m12 * pos.z + m13;
+        final float nz = m20 * pos.x + m21 * pos.y + m22 * pos.z + m23;
+
+        pos.x = nx;
+        pos.y = ny;
+        pos.z = nz;
+        return pos;
+    }
+
+    /// Apply the transformation to an array of positions.
+    public Vec3[] transformPosition(Vec3[] positions) {
+        final float m00 = (1 - 2*(rotation.y * rotation.y + rotation.z * rotation.z))*scale.x;
+        final float m01 = 2*(rotation.x*rotation.y - rotation.w*rotation.z)*scale.y;
+        final float m02 = 2*(rotation.w*rotation.y + rotation.x*rotation.z)*scale.z;
+        final float m03 = position.x;
+
+        final float m10 = 2*(rotation.x*rotation.y + rotation.w*rotation.z)*scale.x;
+        final float m11 = (1 - 2*(rotation.x*rotation.x + rotation.z*rotation.z))*scale.y;
+        final float m12 = 2*((-rotation.w)*rotation.x + rotation.y*rotation.z)*scale.z;
+        final float m13 = position.y;
+
+        final float m20 = 2*((-rotation.w)*rotation.y + rotation.x*rotation.z)*scale.x;
+        final float m21 = 2*(rotation.w*rotation.x + rotation.y*rotation.z)*scale.y;
+        final float m22 = (1 - 2*(rotation.x*rotation.x + rotation.y*rotation.y))*scale.z;
+        final float m23 = position.z;
+
+        for (Vec3 p : positions) {
+            final float nx = m00 * p.x + m01 * p.y + m02 * p.z + m03;
+            final float ny = m10 * p.x + m11 * p.y + m12 * p.z + m13;
+            final float nz = m20 * p.x + m21 * p.y + m22 * p.z + m23;
+
+            p.x = nx;
+            p.y = ny;
+            p.z = nz;
+        }
+        return positions;
+    }
+
+    /// Apply transformation to `count` positions stored in and array. Each position is 3 component float
+    /// and first position's component is at `positionArray+offset`. Each next position is `stride` components
+    /// distant. So basically:
+    /// ```
+    /// x = positionArray[offset + (index * stride) + 0];
+    /// y = positionArray[offset + (index * stride) + 1];
+    /// z = positionArray[offset + (index * stride) + 2];
+    /// ```
+    /// This function _transforms_ the point and stores it in-place.
+    public void transformPosition(float[] positionArray, int count, int offset, int stride) {
+        final float m00 = (1 - 2*(rotation.y * rotation.y + rotation.z * rotation.z))*scale.x;
+        final float m01 = 2*(rotation.x*rotation.y - rotation.w*rotation.z)*scale.y;
+        final float m02 = 2*(rotation.w*rotation.y + rotation.x*rotation.z)*scale.z;
+        final float m03 = position.x;
+
+        final float m10 = 2*(rotation.x*rotation.y + rotation.w*rotation.z)*scale.x;
+        final float m11 = (1 - 2*(rotation.x*rotation.x + rotation.z*rotation.z))*scale.y;
+        final float m12 = 2*((-rotation.w)*rotation.x + rotation.y*rotation.z)*scale.z;
+        final float m13 = position.y;
+
+        final float m20 = 2*((-rotation.w)*rotation.y + rotation.x*rotation.z)*scale.x;
+        final float m21 = 2*(rotation.w*rotation.x + rotation.y*rotation.z)*scale.y;
+        final float m22 = (1 - 2*(rotation.x*rotation.x + rotation.y*rotation.y))*scale.z;
+        final float m23 = position.z;
+
+        for (int index = 0; index < count; index++) {
+            float px = positionArray[offset + (index * stride)];
+            float py = positionArray[offset + (index * stride) + 1];
+            float pz = positionArray[offset + (index * stride) + 2];
+
+            final float nx = m00 * px + m01 * py + m02 * pz + m03;
+            final float ny = m10 * px + m11 * py + m12 * pz + m13;
+            final float nz = m20 * px + m21 * py + m22 * pz + m23;
+
+            positionArray[offset + (index * stride)]     = nx;
+            positionArray[offset + (index * stride) + 1] = ny;
+            positionArray[offset + (index * stride) + 2] = nz;
+        }
+    }
+
+    /// Transforms the normal with non-uniform transpose-inverse of rotation-scale matrix.
+    /// Since we can have non-uniform scale the normal is normalized back to preserve unit length.
+    /// @param normal the normal where the result is stored
+    /// @return reference to `normal`
+    public Vec3 transformNormal(Vec3 normal) {
+        // Normals are transformed by inverse transpose of the 3x3 rotation-scale portion of
+        // the matrix.
+        // We have R * S -> we need inverse transpose Transpose(Inverse(R * S))
+        // Inverse(R * S) = Inverse(S) * Inverse(R), since R is orthogonal then Inverse(S) * Transpose(R)
+        // So we have Inverse(R * S) = Inverse(S) * Transpose(R)
+        // Now we need Transpose(Inverse(R*S)) => Transpose(Inverse(S) * Transpose(R))
+        //     => Transpose(Transpose(R)) * Transpose(Inverse(S))
+        //     => R * Transpose(Inverse(S))
+        // Since S is diagonal, Inverse(S) is diagonal we can
+        //     => R * Inverse(S)
+        // Which is beautifully simple math
+
+        final float oneOverSx = 1.0f / scale.x;
+        final float oneOverSy = 1.0f / scale.y;
+        final float oneOverSz = 1.0f / scale.z;
+
+        final float m00 = (1 - 2*(rotation.y * rotation.y + rotation.z * rotation.z))*oneOverSx;
+        final float m01 = 2*(rotation.x*rotation.y - rotation.w*rotation.z)*oneOverSy;
+        final float m02 = 2*(rotation.w*rotation.y + rotation.x*rotation.z)*oneOverSz;
+
+        final float m10 = 2*(rotation.x*rotation.y + rotation.w*rotation.z)*oneOverSx;
+        final float m11 = (1 - 2*(rotation.x*rotation.x + rotation.z*rotation.z))*oneOverSy;
+        final float m12 = 2*((-rotation.w)*rotation.x + rotation.y*rotation.z)*oneOverSz;
+
+        final float m20 = 2*((-rotation.w)*rotation.y + rotation.x*rotation.z)*oneOverSx;
+        final float m21 = 2*(rotation.w*rotation.x + rotation.y*rotation.z)*oneOverSy;
+        final float m22 = (1 - 2*(rotation.x*rotation.x + rotation.y*rotation.y))*oneOverSz;
+
+        final float nx = m00 * normal.x + m01 * normal.y + m02 * normal.z;
+        final float ny = m10 * normal.x + m11 * normal.y + m12 * normal.z;
+        final float nz = m20 * normal.x + m21 * normal.y + m22 * normal.z;
+
+        normal.x = nx;
+        normal.y = ny;
+        normal.z = nz;
+        return normal.normalize();
+    }
+
+    /// Same as `transformNormal` but transforms array of normals.
+    /// @param normals an array of normals.
+    /// @return reference to array of normals `normals`
+    public Vec3[] transformNormal(Vec3[] normals) {
+        final float oneOverSx = 1.0f / scale.x;
+        final float oneOverSy = 1.0f / scale.y;
+        final float oneOverSz = 1.0f / scale.z;
+
+        final float m00 = (1 - 2*(rotation.y * rotation.y + rotation.z * rotation.z))*oneOverSx;
+        final float m01 = 2*(rotation.x*rotation.y - rotation.w*rotation.z)*oneOverSy;
+        final float m02 = 2*(rotation.w*rotation.y + rotation.x*rotation.z)*oneOverSz;
+
+        final float m10 = 2*(rotation.x*rotation.y + rotation.w*rotation.z)*oneOverSx;
+        final float m11 = (1 - 2*(rotation.x*rotation.x + rotation.z*rotation.z))*oneOverSy;
+        final float m12 = 2*((-rotation.w)*rotation.x + rotation.y*rotation.z)*oneOverSz;
+
+        final float m20 = 2*((-rotation.w)*rotation.y + rotation.x*rotation.z)*oneOverSx;
+        final float m21 = 2*(rotation.w*rotation.x + rotation.y*rotation.z)*oneOverSy;
+        final float m22 = (1 - 2*(rotation.x*rotation.x + rotation.y*rotation.y))*oneOverSz;
+
+        for (Vec3 normal : normals) {
+            final float nx = m00 * normal.x + m01 * normal.y + m02 * normal.z;
+            final float ny = m10 * normal.x + m11 * normal.y + m12 * normal.z;
+            final float nz = m20 * normal.x + m21 * normal.y + m22 * normal.z;
+
+            normal.x = nx;
+            normal.y = ny;
+            normal.z = nz;
+            normal.normalize();
+        }
+        return normals;
+    }
+
+    /// Same as `transformNormal` but transforms over an array of floats.
+    /// @param normalArray an array where normal data is stored
+    /// @param count number of normals we will process
+    /// @param offset index of first normal's component in the array
+    /// @param stride number of _float elements_ between each normal
+    public void transformNormal(float[] normalArray, int count, int offset, int stride) {
+        final float oneOverSx = 1.0f / scale.x;
+        final float oneOverSy = 1.0f / scale.y;
+        final float oneOverSz = 1.0f / scale.z;
+
+        final float m00 = (1 - 2*(rotation.y * rotation.y + rotation.z * rotation.z))*oneOverSx;
+        final float m01 = 2*(rotation.x*rotation.y - rotation.w*rotation.z)*oneOverSy;
+        final float m02 = 2*(rotation.w*rotation.y + rotation.x*rotation.z)*oneOverSz;
+
+        final float m10 = 2*(rotation.x*rotation.y + rotation.w*rotation.z)*oneOverSx;
+        final float m11 = (1 - 2*(rotation.x*rotation.x + rotation.z*rotation.z))*oneOverSy;
+        final float m12 = 2*((-rotation.w)*rotation.x + rotation.y*rotation.z)*oneOverSz;
+
+        final float m20 = 2*((-rotation.w)*rotation.y + rotation.x*rotation.z)*oneOverSx;
+        final float m21 = 2*(rotation.w*rotation.x + rotation.y*rotation.z)*oneOverSy;
+        final float m22 = (1 - 2*(rotation.x*rotation.x + rotation.y*rotation.y))*oneOverSz;
+
+        for (int index = 0; index < count; index++) {
+            int baseIndex = offset + (index * stride);
+            final float normx = normalArray[baseIndex];
+            final float normy = normalArray[baseIndex + 1];
+            final float normz = normalArray[baseIndex + 2];
+
+            final float nx = m00 * normx + m01 * normy + m02 * normz;
+            final float ny = m10 * normx + m11 * normy + m12 * normz;
+            final float nz = m20 * normx + m21 * normy + m22 * normz;
+
+            final float len = (float) Math.sqrt(nx*nx + ny*ny + nz*nz);
+            if (len > EPSILON8) {
+                normalArray[baseIndex] = nx / len;
+                normalArray[baseIndex + 1] = ny / len;
+                normalArray[baseIndex + 2] = nz / len;
+            }
+        }
+    }
+
+
+    /// Transforms the normal with non-uniform transpose-inverse of rotation-scale matrix.
+    /// This method is same as `transformNormal` but normal is not normalized.
+    /// @param normal the normal where the result is stored
+    /// @return reference to `normal`
+    public Vec3 transformNormalUnnormalized(Vec3 normal) {
+        // See transformNormal for math explanation.
+
+        final float oneOverSx = 1.0f / scale.x;
+        final float oneOverSy = 1.0f / scale.y;
+        final float oneOverSz = 1.0f / scale.z;
+
+        final float m00 = (1 - 2*(rotation.y * rotation.y + rotation.z * rotation.z))*oneOverSx;
+        final float m01 = 2*(rotation.x*rotation.y - rotation.w*rotation.z)*oneOverSy;
+        final float m02 = 2*(rotation.w*rotation.y + rotation.x*rotation.z)*oneOverSz;
+
+        final float m10 = 2*(rotation.x*rotation.y + rotation.w*rotation.z)*oneOverSx;
+        final float m11 = (1 - 2*(rotation.x*rotation.x + rotation.z*rotation.z))*oneOverSy;
+        final float m12 = 2*((-rotation.w)*rotation.x + rotation.y*rotation.z)*oneOverSz;
+
+        final float m20 = 2*((-rotation.w)*rotation.y + rotation.x*rotation.z)*oneOverSx;
+        final float m21 = 2*(rotation.w*rotation.x + rotation.y*rotation.z)*oneOverSy;
+        final float m22 = (1 - 2*(rotation.x*rotation.x + rotation.y*rotation.y))*oneOverSz;
+
+        final float nx = m00 * normal.x + m01 * normal.y + m02 * normal.z;
+        final float ny = m10 * normal.x + m11 * normal.y + m12 * normal.z;
+        final float nz = m20 * normal.x + m21 * normal.y + m22 * normal.z;
+
+        normal.x = nx;
+        normal.y = ny;
+        normal.z = nz;
+        return normal;
+    }
+
+    /// Same as `transformNormalUnnormalized` but transforms array of normals.
+    /// @param normals an array of normals.
+    /// @return reference to array of normals `normals`
+    public Vec3[] transformNormalUnnormalized(Vec3[] normals) {
+        final float oneOverSx = 1.0f / scale.x;
+        final float oneOverSy = 1.0f / scale.y;
+        final float oneOverSz = 1.0f / scale.z;
+
+        final float m00 = (1 - 2*(rotation.y * rotation.y + rotation.z * rotation.z))*oneOverSx;
+        final float m01 = 2*(rotation.x*rotation.y - rotation.w*rotation.z)*oneOverSy;
+        final float m02 = 2*(rotation.w*rotation.y + rotation.x*rotation.z)*oneOverSz;
+
+        final float m10 = 2*(rotation.x*rotation.y + rotation.w*rotation.z)*oneOverSx;
+        final float m11 = (1 - 2*(rotation.x*rotation.x + rotation.z*rotation.z))*oneOverSy;
+        final float m12 = 2*((-rotation.w)*rotation.x + rotation.y*rotation.z)*oneOverSz;
+
+        final float m20 = 2*((-rotation.w)*rotation.y + rotation.x*rotation.z)*oneOverSx;
+        final float m21 = 2*(rotation.w*rotation.x + rotation.y*rotation.z)*oneOverSy;
+        final float m22 = (1 - 2*(rotation.x*rotation.x + rotation.y*rotation.y))*oneOverSz;
+
+        for (Vec3 normal : normals) {
+            final float nx = m00 * normal.x + m01 * normal.y + m02 * normal.z;
+            final float ny = m10 * normal.x + m11 * normal.y + m12 * normal.z;
+            final float nz = m20 * normal.x + m21 * normal.y + m22 * normal.z;
+
+            normal.x = nx;
+            normal.y = ny;
+            normal.z = nz;
+        }
+        return normals;
+    }
+
+    /// Same as `transformNormalUnnormalized` but transforms over an array of floats.
+    /// @param normalArray an array where normal data is stored
+    /// @param count number of normals we will process
+    /// @param offset index of first normal's component in the array
+    /// @param stride number of _float elements_ between each normal
+    public void transformNormalUnnormalized(float[] normalArray, int count, int offset, int stride) {
+        final float oneOverSx = 1.0f / scale.x;
+        final float oneOverSy = 1.0f / scale.y;
+        final float oneOverSz = 1.0f / scale.z;
+
+        final float m00 = (1 - 2*(rotation.y * rotation.y + rotation.z * rotation.z))*oneOverSx;
+        final float m01 = 2*(rotation.x*rotation.y - rotation.w*rotation.z)*oneOverSy;
+        final float m02 = 2*(rotation.w*rotation.y + rotation.x*rotation.z)*oneOverSz;
+
+        final float m10 = 2*(rotation.x*rotation.y + rotation.w*rotation.z)*oneOverSx;
+        final float m11 = (1 - 2*(rotation.x*rotation.x + rotation.z*rotation.z))*oneOverSy;
+        final float m12 = 2*((-rotation.w)*rotation.x + rotation.y*rotation.z)*oneOverSz;
+
+        final float m20 = 2*((-rotation.w)*rotation.y + rotation.x*rotation.z)*oneOverSx;
+        final float m21 = 2*(rotation.w*rotation.x + rotation.y*rotation.z)*oneOverSy;
+        final float m22 = (1 - 2*(rotation.x*rotation.x + rotation.y*rotation.y))*oneOverSz;
+
+        for (int index = 0; index < count; index++) {
+            final float normx = normalArray[offset + (index * stride)];
+            final float normy = normalArray[offset + (index * stride) + 1];
+            final float normz = normalArray[offset + (index * stride) + 2];
+
+            final float nx = m00 * normx + m01 * normy + m02 * normz;
+            final float ny = m10 * normx + m11 * normy + m12 * normz;
+            final float nz = m20 * normx + m21 * normy + m22 * normz;
+
+            normalArray[offset + (index * stride)] = nx;
+            normalArray[offset + (index * stride) + 1] = ny;
+            normalArray[offset + (index * stride) + 2] = nz;
+        }
     }
 
     public void toMatrix(Mat4 dest) {

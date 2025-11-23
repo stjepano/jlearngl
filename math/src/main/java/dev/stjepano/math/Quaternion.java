@@ -4,6 +4,8 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.Objects;
 
+import static dev.stjepano.math.MathUtil.EPSILON8;
+
 /// _Rotation_ quaternion.
 ///
 /// For quaternion to represent valid rotation it must be normalized. Non-normalized quaternions do not
@@ -414,7 +416,7 @@ public final class Quaternion {
     /// @return angle of rotation (in radians)
     public float toAxisAngle(Vec3 destAxis) {
         float len = length();
-        if (len < 1e-8f) {
+        if (len < EPSILON8) {
             destAxis.x = 1.0f;
             destAxis.y = 0.0f;
             destAxis.z = 0.0f;
@@ -428,7 +430,7 @@ public final class Quaternion {
 
 
         float s = (float)Math.sqrt(1.0f - w*w);
-        if (s < 1e-8f) {
+        if (s < EPSILON8) {
             destAxis.x = 1.0f;
             destAxis.y = 0.0f;
             destAxis.z = 0.0f;

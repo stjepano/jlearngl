@@ -1,5 +1,6 @@
 plugins {
     id 'java-library'
+    id 'me.champeau.jmh' version '0.7.2'
 }
 
 group = 'dev.stjepano'
@@ -13,6 +14,39 @@ dependencies {
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+jmh {
+    jmhVersion = '1.37'
+    warmupIterations = 3
+    warmup = '1s'
+    iterations = 5
+    fork = 1
+    includes = ['.*Benchmark.*']
+
+    jvmArgs = [
+            '-Xms256M',
+            '-Xmx512M',
+            '--enable-preview'
+    ]
+
+    resultsFile = project.file("${project.buildDir}/reports/jmh/results.txt")
+    resultFormat = 'TEXT'
+    failOnError = true
+    humanOutputFile = project.file("${project.buildDir}/reports/jmh/human.txt")
+}
+
+sourceSets {
+    jmh {
+        java.srcDirs = ['src/jmh/java']
+        resources.srcDirs = ['src/jmh/resources']
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+tasks.named('jmhCompileGeneratedClasses') {
+    dependsOn('compileJava')
 }
 
 test {
