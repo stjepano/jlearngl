@@ -14,4 +14,14 @@ public final class MathUtil {
         return dist < epsilon;
     }
 
+    /// Return safe 1.0 / value. If value is smaller than epsilon in absolute value,
+    /// return 1.0 / epsilon (with sign of value). This avoids division by zero or
+    /// extremely large results.
+    public static float safeOneOver(float value, float epsilon) {
+        if (Math.abs(value) < epsilon) {
+            return 1.0f / (value >= 0.0f ? epsilon : -epsilon);
+        }
+        return 1.0f / value;
+    }
+
 }

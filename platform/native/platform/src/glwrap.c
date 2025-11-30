@@ -13,6 +13,31 @@ jboolean jglPolygonMode(jGLenum mode) {
     return glGetError() == GL_NO_ERROR;
 }
 
+jboolean jglDepthStateConfigure(const DepthState *depth_state) {
+    if (depth_state->enabled) {
+        glEnable(GL_DEPTH_TEST);
+    } else {
+        glDisable(GL_DEPTH_TEST);
+    }
+    glDepthFunc((GLenum) depth_state->function);
+    if (depth_state->enable_write) {
+        glDepthMask(GL_TRUE);
+    } else {
+        glDepthMask(GL_FALSE);
+    }
+
+    if (depth_state->enable_clamp) {
+        glEnable(GL_DEPTH_CLAMP);
+    } else {
+        glDisable(GL_DEPTH_CLAMP);
+    }
+
+    glDepthRangef(depth_state->near_plane, depth_state->far_plane);
+
+    return glGetError() == GL_NO_ERROR;
+}
+
+
 void jglClearNamedFramebufferiv(jGLuint framebuffer, jGLenum buffer, jGLint drawbuffer, const jGLint *value) {
     glClearNamedFramebufferiv((GLuint) framebuffer, (GLenum) buffer, (GLint) drawbuffer, (const GLint *) value);
 }

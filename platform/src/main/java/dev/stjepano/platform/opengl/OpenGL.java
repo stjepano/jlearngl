@@ -18,6 +18,14 @@ public interface OpenGL {
     /// @param height Height of viewport
     void viewport(int x, int y, int width, int height);
 
+    /// Set the depth buffer state.
+    ///
+    /// Enables or disables depth testing sets the depth comparison function, enables or disables depth writes
+    /// and sets the depth range.
+    ///
+    /// @param depthState the depth state to set.
+    void depthState(DepthState depthState);
+
     /// Select a polygon rasterization mode
     /// @param mode specifies how polygons will be rasterized (default FILL)
     void polygonMode(GLPolygonRasterMode mode);
@@ -102,4 +110,5 @@ public interface OpenGL {
     /// @param indexType the type of values in index buffer (Must be one of UNSIGNED_BYTE, UNSIGNED_SHORT, UNSIGNED_INT)
     /// @param offset a byte offset in index buffer to first index
     void drawElements(GLPrimitive primitiveType, int count, GLDataType indexType, long offset);
+
 }

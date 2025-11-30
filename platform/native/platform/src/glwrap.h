@@ -17,9 +17,19 @@ typedef jlong jGLintptr;
 typedef jlong jGLsizeiptr;
 typedef jfloat jGLfloat;
 
+typedef struct {
+    jint enabled;
+    jint function;
+    jint enable_write;
+    jint enable_clamp;
+    jfloat near_plane;
+    jfloat far_plane;
+} DepthState;
+
 
 PLATFORM_API void jglViewport(jGLint x, jGLint y, jGLsizei w, jGLsizei h);
 PLATFORM_API jboolean jglPolygonMode(jGLenum mode);
+PLATFORM_API jboolean jglDepthStateConfigure(const DepthState* depth_state);
 
 PLATFORM_API void jglClearNamedFramebufferiv(jGLuint framebuffer, jGLenum buffer, jGLint drawbuffer, const jGLint *value);
 PLATFORM_API void jglClearNamedFramebufferuiv(jGLuint framebuffer, jGLenum buffer, jGLint drawbuffer, const jGLuint *value);

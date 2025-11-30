@@ -2,6 +2,8 @@ package dev.stjepano.learngl.tutorial;
 
 import dev.stjepano.math.Projection;
 import dev.stjepano.math.Transform;
+import dev.stjepano.math.geometry.mesh.IndexedMesh;
+import dev.stjepano.math.geometry.mesh.TriangleMeshGen;
 import dev.stjepano.platform.*;
 import dev.stjepano.platform.util.JavaResources;
 import dev.stjepano.platform.util.PixelImage;
@@ -18,10 +20,11 @@ public class CoordinateSystemsTutorial {
     }
 
     private final Projection projection = new Projection();
-    private final Transform modelTransform = new Transform();
+    private final Transform transform = new Transform();
 
     private OpenGL gl;
 
+    private IndexedMesh mesh;
     private VertexArray meshVertexArray;
     private Buffer meshVertexBuffer;
     private Buffer meshIndexBuffer;
@@ -40,11 +43,16 @@ public class CoordinateSystemsTutorial {
 
             gl.viewport(0, 0, window.framebufferWidth(), window.framebufferHeight());
 
+            DepthState depthState = DepthState.builder()
+                    .enable(true)
+                    .build();
+            gl.depthState(depthState);
+
             float aspect = (float) window.framebufferWidth() / (float) window.framebufferHeight();
             this.projection.setPerspective((float) Math.toRadians(45.0f), aspect, 0.1f, 100.0f);
 
-            this.modelTransform.setPosition(0.0f, 0.0f, -3.0f)
-                    .setRotationX((float) Math.toRadians(-55.0f));
+            this.transform.setPosition(0.0f, 0.0f, -3.0f);
+                    //.setRotationX((float) Math.toRadians(55.0f));
 
             loadMesh();
             loadProgram();
@@ -56,9 +64,9 @@ public class CoordinateSystemsTutorial {
             shaderProgram.setInt(3, 0);   // texture unit 0
             shaderProgram.setInt(4, 1);   // texture unit 1
 
-            float[] worldArray = new float[16];
-            modelTransform.toMatrixFloatArray(worldArray, 0);
-            shaderProgram.setMat4Array(1, true, worldArray);
+            float[] modelMatrixArray = new float[16];
+            transform.toMatrixFloatArray(modelMatrixArray, 0);
+            shaderProgram.setMat4Array(1, true, modelMatrixArray);
 
             Time time = platform.time();
             double t0 = time.seconds();
@@ -71,6 +79,7 @@ public class CoordinateSystemsTutorial {
                     continue;
                 }
                 gl.clearColorBuffer(0.11f, 0.12f, 0.13f, 1.0f);
+                gl.clearDepth(1.0f);
                 brightness = 1.0f - (float)Math.abs(0.4f * Math.cos(2.0f * time.seconds()));
                 shaderProgram.setFloat(2, brightness);
 
@@ -81,7 +90,11 @@ public class CoordinateSystemsTutorial {
                 gl.bindSamplerUnit(0, textureSampler);
                 gl.bindSamplerUnit(1, textureSampler);
                 gl.bindVertexArray(meshVertexArray);
-                gl.drawElements(GLPrimitive.TRIANGLES, 6, GLDataType.UNSIGNED_INT, 0);
+                gl.drawElements(GLPrimitive.TRIANGLES, mesh.indices().length, GLDataType.UNSIGNED_INT, 0);
+
+                transform.rotateLocalY((float)Math.toRadians(20.0f) * (float)time.frameDeltaSeconds());
+                transform.toMatrixFloatArray(modelMatrixArray, 0);
+                shaderProgram.setMat4Array(1, true, modelMatrixArray);
 
                 window.swapBuffers();
             }
@@ -102,8 +115,9 @@ public class CoordinateSystemsTutorial {
                 .build();
 
         final SamplerParameters samplerParameters = SamplerParameters.builder()
-                .minFilter(GLTextureMinFilter.NEAREST)
-                .magFilter(GLTextureMagFilter.NEAREST)
+                .minFilter(GLTextureMinFilter.LINEAR_MIPMAP_LINEAR)
+                .magFilter(GLTextureMagFilter.LINEAR)
+                .maxAnisotropy(16.0f)
                 .build();
         this.textureSampler = gl.createSampler(samplerParameters);
 
@@ -141,22 +155,11 @@ public class CoordinateSystemsTutorial {
 
     private void loadMesh() {
         try (Arena arena = Arena.ofConfined()) {
-            float[] vertices = new float[]{
-                    // top left
-                    -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-                    // bottom left
-                    -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-                    // bottom right
-                    0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,
-                    // top right
-                    0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f
-            };
-            int[] indices = new int[]{
-                    0, 1, 2,
-                    0, 2, 3
-            };
-            MemorySegment verticesPtr = arena.allocateFrom(ValueLayout.JAVA_FLOAT, vertices);
-            MemorySegment indicesPtr = arena.allocateFrom(ValueLayout.JAVA_INT, indices);
+            TriangleMeshGen meshGen = new TriangleMeshGen(IndexedMesh.VertexFormat.AttributeType.COLOR, IndexedMesh.VertexFormat.AttributeType.TEX_COORD);
+            this.mesh = meshGen.addCube(1.0f, 1.0f, 1.0f).build();
+
+            MemorySegment verticesPtr = arena.allocateFrom(ValueLayout.JAVA_FLOAT, mesh.vertexData());
+            MemorySegment indicesPtr = arena.allocateFrom(ValueLayout.JAVA_INT, mesh.indices());
 
             BufferStorageFlags storageFlags = BufferStorageFlags.builder().build();
 
@@ -164,12 +167,12 @@ public class CoordinateSystemsTutorial {
             meshIndexBuffer = gl.createBuffer(indicesPtr.byteSize(), storageFlags, indicesPtr);
 
             meshVertexArray = gl.createVertexArray();
-            meshVertexArray.vertexBuffer(0, meshVertexBuffer, 0, 8 * (int) GLDataType.FLOAT.byteSize());
+            meshVertexArray.vertexBuffer(0, meshVertexBuffer, 0, mesh.vertexFormat().stride() * (int) GLDataType.FLOAT.byteSize());
             meshVertexArray.indexBuffer(meshIndexBuffer);
 
             meshVertexArray.vertexAttrib(0, 0, 3, GLDataType.FLOAT, false, 0);
-            meshVertexArray.vertexAttrib(1, 0, 3, GLDataType.FLOAT, false, 3 * (int) GLDataType.FLOAT.byteSize());
-            meshVertexArray.vertexAttrib(2, 0, 2, GLDataType.FLOAT, false, 6 * (int) GLDataType.FLOAT.byteSize());
+            meshVertexArray.vertexAttrib(1, 0, 3, GLDataType.FLOAT, false, mesh.vertexFormat().colorOffset() * (int) GLDataType.FLOAT.byteSize());
+            meshVertexArray.vertexAttrib(2, 0, 2, GLDataType.FLOAT, false, mesh.vertexFormat().textureCoordinateOffset() * (int) GLDataType.FLOAT.byteSize());
         }
     }
 

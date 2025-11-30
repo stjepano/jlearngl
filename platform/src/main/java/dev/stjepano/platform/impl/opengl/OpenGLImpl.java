@@ -37,9 +37,34 @@ public class OpenGLImpl implements OpenGL {
     public static final int GL_TEXTURE_COMPARE_MODE = 0x884C;
     public static final int GL_TEXTURE_COMPARE_FUNC = 0x884D;
 
+    private static final StructLayout DEPTH_STATE_LAYOUT = MemoryLayout.structLayout(
+            ValueLayout.JAVA_INT.withName("enabled"),
+            ValueLayout.JAVA_INT.withName("function"),
+            ValueLayout.JAVA_INT.withName("enableWrite"),
+            ValueLayout.JAVA_INT.withName("enableClamp"),
+            ValueLayout.JAVA_FLOAT.withName("nearPlane"),
+            ValueLayout.JAVA_FLOAT.withName("farPlane")
+    );
+
     @Override
     public void viewport(int x, int y, int width, int height) {
         JGL.jglViewport(x, y, width, height);
+    }
+
+    @Override
+    public void depthState(DepthState depthState) {
+        try (StackAllocator stack = StackAllocator.push()) {
+            MemorySegment depthStatePtr = stack.allocate(DEPTH_STATE_LAYOUT);
+            depthStatePtr.set(ValueLayout.JAVA_INT, DEPTH_STATE_LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("enabled")), depthState.enabled() ? 1 : 0);
+            depthStatePtr.set(ValueLayout.JAVA_INT, DEPTH_STATE_LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("function")), depthState.function().glEnumValue());
+            depthStatePtr.set(ValueLayout.JAVA_INT, DEPTH_STATE_LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("enableWrite")), depthState.enableWrite() ? 1 : 0);
+            depthStatePtr.set(ValueLayout.JAVA_INT, DEPTH_STATE_LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("enableClamp")), depthState.enableClamp() ? 1 : 0);
+            depthStatePtr.set(ValueLayout.JAVA_FLOAT, DEPTH_STATE_LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("nearPlane")), depthState.nearPlane());
+            depthStatePtr.set(ValueLayout.JAVA_FLOAT, DEPTH_STATE_LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("farPlane")), depthState.farPlane());
+            if (!JGL.jglDepthStateConfigure(depthStatePtr)) {
+                throw new OpenGLException("Failed to set depth state: " + depthState);
+            }
+        }
     }
 
     @Override

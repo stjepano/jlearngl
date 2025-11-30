@@ -161,5 +161,8 @@ interface JGLBindings {
 
     @NativeBinding
     void jglDrawElements(int mode, int count, int type, long offset);
+
+    @NativeBinding
+    boolean jglDepthStateConfigure(MemorySegment depthStatePtr);
 }
 

@@ -2,134 +2,180 @@ package dev.stjepano.math;
 
 import java.util.Objects;
 
-import static dev.stjepano.math.MathUtil.EPSILON8;
+import static dev.stjepano.math.MathUtil.*;
 
-/// Represents object's transformation in 3D space using:
-/// - position (Vec3) - translation
-/// - rotation (Quaternion) - orientation
-/// - Scale (Vec3) - size
+/// A transform represents position - rotation - scale of some object in 3D space.
+///
+/// Mathematically it is expressed as T * R * S * v where T is translation matrix, R is rotation matrix, S is scale matrix
+/// and v is vector that is transformed. This means that any vector is transformed in following order: Scale -> Rotate -> Translate.
+///
+/// You can express translation and rotation globally or in local object space or in local mathematical space.
+///
+/// * local object space is defined by right, up and forward vectors, by convention forward vector in identity transform
+///   is in the direction of -Z. This space is used for object movement.
+/// * local mathematical space is defined by right, up and backward vectors. The right and up are same as in local object
+///   space but backward is in +Z direction (points to camera). This space is used when construction meshes.
+///
+/// Because of how transformations are applied to objects, the `scale` is always in local space.
+///
+/// **NOTE** that normals have special transform functions, they can not be transformed in same way as positions.
 public final class Transform {
     private final Vec3 position = new Vec3();
     private final Vec3 scale = new Vec3(1, 1, 1);
     private final Quaternion rotation = new Quaternion();
 
-    /// Get the current position.
+    /// A position of the object in space relative to parent.
+    /// @return reference to _position_ vector.
     public Vec3 position() {
         return this.position;
     }
 
-    /// Get the current scale.
+    /// Scale of the object. Always local scale.
+    /// @return reference to _scale_ vector.
     public Vec3 scale() {
         return this.scale;
     }
 
-    /// Get the current rotation.
+    /// Rotation of the object in space relative to parent.
+    /// @return reference to _rotation_ vector.
     public Quaternion rotation() {
         return this.rotation;
     }
 
-    /// Set position to given coordinates.
+    /// Set position to 3D vector given by its coordinates.
+    /// @param x x component of the 3D vector
+    /// @param y y component of the 3D vector
+    /// @param z z component of the 3D vector
+    /// @return reference to this for chaining
     public Transform setPosition(float x, float y, float z) {
         this.position.set(x, y, z);
         return this;
     }
 
-    /// Set position to given vector.
+    /// Set position to the specified 3D vector.
+    /// @param pos 3D vector which is copied to internal _position_
+    /// @return reference to this for chaining
     public Transform setPosition(Vec3 pos) {
         this.position.set(pos);
         return this;
     }
 
-    /// Set rotation to given quaternion.
+    /// Set rotation to the specified quaternion. Make sure that quaternion represents rotation, otherwise you
+    /// will get undefined behaviour.
+    /// @param rot rotation expressed with quaternion, must be rotation quaternion
+    /// @return reference to this for chaining
     public Transform setRotation(Quaternion rot) {
         this.rotation.set(rot);
         return this;
     }
 
+    /// Set rotation to be rotation of `angleRad` radians about X axis.
+    /// @param angleRad angle in radians
+    /// @return reference to this for chaining
     public Transform setRotationX(float angleRad) {
         this.rotation.setRotationX(angleRad);
         return this;
     }
 
+    /// Set rotation to be rotation of `angleRad` radians about Y axis.
+    /// @param angleRad angle in radians
+    /// @return reference to this for chaining
     public Transform setRotationY(float angleRad) {
         this.rotation.setRotationY(angleRad);
         return this;
     }
 
+    /// Set rotation to be rotation of `angleRad` radians about Z axis.
+    /// @param angleRad angle in radians
+    /// @return reference to this for chaining
     public Transform setRotationZ(float angleRad) {
         this.rotation.setRotationZ(angleRad);
         return this;
     }
 
-    /// Set rotation to rotation of `angleRad` radians about given `unitAxis`.
+    /// Set rotation to be rotation of `angleRad` about the specified `unitAxis`. Make sure that `unitAxis` is of
+    /// unit length otherwise you will get undefined behaviour.
+    /// @param unitAxis unit vector representing rotation axis
+    /// @param angleRad angle in radians
+    /// @return reference to this for chaining
     public Transform setRotation(Vec3 unitAxis, float angleRad) {
         this.rotation.setAxisAngle(unitAxis, angleRad);
         return this;
     }
 
-    /// Set rotation to specified euler angles.
-    /// Uses YXZ order (Yaw - Pitch - Roll).
-    ///
-    /// NOTE: typical rotation in game engines.
-    /// @param pitchRad pitch angle in radians (rotation about X)
-    /// @param yawRad yaw angle in radians (rotation about Y)
-    /// @param rollRad roll angle in radians (rotation about Z)
+    /// Set rotation from euler angles (order of rotation Yaw-Pitch-Roll).
+    /// @param pitchRad pitch angle in radians
+    /// @param yawRad yaw angle in radians
+    /// @param rollRad roll angle in radians
+    /// @return reference to this for chaining
     public Transform setRotationEulerYXZ(float pitchRad, float yawRad, float rollRad) {
         this.rotation.setEulerYXZ(pitchRad, yawRad, rollRad);
         return this;
     }
 
-    /// Set rotation to specified euler angles.
-    /// Uses ZXY order (Roll-Pitch-Yaw).
-    ///
-    /// NOTE: also commonly used in game engines.
-    /// @param pitchRad pitch angle in radians (rotation about X)
-    /// @param yawRad yaw angle in radians (rotation about Y)
-    /// @param rollRad roll angle in radians (rotation about Z)
+    /// Set rotation from euler angles (order of rotation Roll-Pitch-Yaw).
+    /// @param pitchRad pitch angle in radians
+    /// @param yawRad yaw angle in radians
+    /// @param rollRad roll angle in radians
+    /// @return reference to this for chaining
     public Transform setRotationEulerZXY(float pitchRad, float yawRad, float rollRad) {
         this.rotation.setEulerZXY(pitchRad, yawRad, rollRad);
         return this;
     }
 
-    /// Set rotation to specified euler angles.
-    /// Uses ZYX order (Roll-Yaw-Pitch).
-    ///
-    /// NOTE: for space and aero simulation.
-    /// @param pitchRad pitch angle in radians (rotation about X)
-    /// @param yawRad yaw angle in radians (rotation about Y)
-    /// @param rollRad roll angle in radians (rotation about Z)
+    /// Set rotation from euler angles (order of rotation Roll-Yaw-Pitch).
+    /// @param pitchRad pitch angle in radians
+    /// @param yawRad yaw angle in radians
+    /// @param rollRad roll angle in radians
+    /// @return reference to this for chaining
     public Transform setRotationEulerZYX(float pitchRad, float yawRad, float rollRad) {
         this.rotation.setEulerZYX(pitchRad, yawRad, rollRad);
         return this;
     }
 
-    /// Set the transform scale.
+    /// Set scale.
+    /// @param x scaling factor on X axis
+    /// @param y scaling factor on Y axis
+    /// @param z scaling factor on Z axis
+    /// @return reference to this for chaining
     public Transform setScale(float x, float y, float z) {
         this.scale.set(x, y, z);
         return this;
     }
 
-    /// Set the transform scale uniformly.
+    /// Set scale uniformly. All axes have same scale.
+    /// @param uniformScale uniform scale
+    /// @return reference to this for chaining
     public Transform setScale(float uniformScale) {
         this.scale.set(uniformScale, uniformScale, uniformScale);
         return this;
     }
 
-    /// Translate the transform current position by given coordinates.
+    /// Global translate the transform with given vector.
+    /// @param x the X component of the vector
+    /// @param y the Y component of the vector
+    /// @param z the Z component of the vector
+    /// @return reference to this for chaining
     public Transform translate(float x, float y, float z) {
         this.position.add(x, y, z);
         return this;
     }
 
-    /// Translates the transform current position in local coordinate system. Note that `z` is transformed in
-    /// forward direction.
+    /// Local (object-space) translate the transform with given vector.
+    /// @param x the X component of the vector
+    /// @param y the Y component of the vector
+    /// @param z the Z component of the vector
+    /// @return reference to this for chaining
     public Transform translateLocal(float x, float y, float z) {
         translateLocalBasis(x, y, -z);
         return this;
     }
 
-    /// Translates the transform current position in coordinate system defined by basis vectors. Note that `z` is
-    /// transformed in backward direction.
+    /// Local (mathematical object-space) translate the transform with given vector.
+    /// @param x the X component of the vector
+    /// @param y the Y component of the vector
+    /// @param z the Z component of the vector
+    /// @return reference to this for chaining
     public Transform translateLocalBasis(float x, float y, float z) {
         // 1. conjugate_rotation = conjugate(rotation)
         float cqx = -rotation.x;
@@ -163,48 +209,61 @@ public final class Transform {
         return this;
     }
 
-    /// Translate the transform current position by given vector.
+    /// Global translate the transform with given vector.
+    /// @param offset the translation vector
+    /// @return reference to this for chaining
     public Transform translate(Vec3 offset) {
         this.position.add(offset);
         return this;
     }
 
-    /// Translates the transform current position in local coordinate system. Note that `z` is transformed in
-    /// forward direction.
+    /// Local (object-space) translate the transform with given vector.
+    /// @param offset the translation vector
+    /// @return reference to this for chaining
     public Transform translateLocal(Vec3 offset) {
         this.translateLocal(offset.x, offset.y, offset.z);
         return this;
     }
 
-    /// Translates the transform current position in coordinate system defined by basis vectors. Note that `z` is
-    /// transformed in backward direction.
+    /// Local (mathematical object-space) translate the transform with given vector.
+    /// @param offset the translation vector
+    /// @return reference to this for chaining
     public Transform translateLocalBasis(Vec3 offset) {
         this.translateLocalBasis(offset.x, offset.y, offset.z);
         return this;
     }
 
-    /// Rotate the transform in world space rotation by given quaternion.
+    /// Global rotate the transform.
+    /// @param rot rotation quaternion
+    /// @return reference to this for chaining
     public Transform rotate(Quaternion rot) {
         // World rotation: this.rotation = rot * this.rotation (premultiply)
         this.rotation.preMul(rot);
         return this;
     }
 
-    /// Rotate the transform in local coordinates (Z is pointing in forward direction).
+    /// Local (object-space) rotate the transform.
+    /// @param rot rotation quaternion
+    /// @return reference to this for chaining
     public Transform rotateLocal(Quaternion rot) {
         // Convert to axis angle and use that
         this.rotation.mul(rot.x, rot.y, -rot.z, rot.w);
         return this;
     }
 
-    /// Rotate the transform in mathematical basis (Z is pointing in backward direction).
+    /// Local (mathematical object-space) rotate the transform.
+    /// @param rot rotation quaternion
+    /// @return reference to this for chaining
     public Transform rotateLocalBasis(Quaternion rot) {
         // Local rotation: this.rotation = this.rotation * rot
         this.rotation.mul(rot);
         return this;
     }
 
-    /// Rotate the transform in world space by given angle about given _unit length_ axis.
+    /// Global rotate the transform.
+    /// @param unitAxis unit vector representing the rotation axis
+    /// @param angleRad angle in radians
+    /// @return reference to this for chaining
     public Transform rotate(Vec3 unitAxis, float angleRad) {
         // World rotation: this.rotation = rot * this.rotation (premultiply)
         float halfAngle = angleRad * 0.5f;
@@ -218,8 +277,10 @@ public final class Transform {
         return this;
     }
 
-    /// Rotate the transform in local coordinate system (note that in local coordinates forward is in negative Z basis).
-    /// Rotates by given angle about given _unit length_ axis.
+    /// Local (object-space) rotate the transform.
+    /// @param unitAxis unit vector representing the rotation axis
+    /// @param angleRad angle in radians
+    /// @return reference to this for chaining
     public Transform rotateLocal(Vec3 unitAxis, float angleRad) {
         float halfAngle = angleRad * 0.5f;
         float s = (float) Math.sin(halfAngle);
@@ -232,8 +293,10 @@ public final class Transform {
         return this;
     }
 
-    /// Rotate the transform in local basis coordinate system.
-    /// Rotates by given angle about given _unit length_ axis.
+    /// Local (mathematical object-space) rotate the transform.
+    /// @param unitAxis unit vector representing the rotation axis
+    /// @param angleRad angle in radians
+    /// @return reference to this for chaining
     public Transform rotateLocalBasis(Vec3 unitAxis, float angleRad) {
         float halfAngle = angleRad * 0.5f;
         float s = (float) Math.sin(halfAngle);
@@ -250,72 +313,98 @@ public final class Transform {
     private static final Vec3 UNIT_Y = new Vec3(0, 1, 0);
     private static final Vec3 UNIT_Z = new Vec3(0, 0, 1);
 
-    /// Rotate by `angleRad` about world X axis.
+    /// Global rotate the transform about X axis.
+    /// @param angleRad angle in radians
+    /// @return reference to this for chaining
     public Transform rotateX(float angleRad) {
         return rotate(UNIT_X, angleRad);
     }
 
-    /// Rotate by `angleRad` about world Y axis.
+    /// Global rotate the transform about Y axis.
+    /// @param angleRad angle in radians
+    /// @return reference to this for chaining
     public Transform rotateY(float angleRad) {
         return rotate(UNIT_Y, angleRad);
     }
 
-    /// Rotate by `angleRad` about world Z axis.
+    /// Global rotate the transform about Z axis.
+    /// @param angleRad angle in radians
+    /// @return reference to this for chaining
     public Transform rotateZ(float angleRad) {
         return rotate(UNIT_Z, angleRad);
     }
 
-    /// Rotate by `angleRad` about local X axis (right relative to transform).
+    /// Local (object-space) rotate the transform about X axis.
+    /// @param angleRad angle in radians
+    /// @return reference to this for chaining
     public Transform rotateLocalX(float angleRad) {
         return rotateLocal(UNIT_X, angleRad);
     }
 
-    /// Rotate by `angleRad` about local basis X axis (right relative to viewer).
+    /// Local (mathematical object-space) rotate the transform about X axis.
+    /// @param angleRad angle in radians
+    /// @return reference to this for chaining
     public Transform rotateLocalBasisX(float angleRad) {
         return rotateLocalBasis(UNIT_X, angleRad);
     }
 
-    /// Rotate by `angleRad` about local Y axis (up relative to transform).
+    /// Local (object-space) rotate the transform about Y axis.
+    /// @param angleRad angle in radians
+    /// @return reference to this for chaining
     public Transform rotateLocalY(float angleRad) {
         return rotateLocal(UNIT_Y, angleRad);
     }
 
-    /// Rotate by `angleRad` about local basis Y axis (up relative to viewer).
+    /// Local (mathematical object-space) rotate the transform about Y axis.
+    /// @param angleRad angle in radians
+    /// @return reference to this for chaining
     public Transform rotateLocalBasisY(float angleRad) {
         return rotateLocalBasis(UNIT_Y, angleRad);
     }
 
-    /// Rotate by `angleRad` about local Z axis (forward relative to transform).
+    /// Local (object-space) rotate the transform about Z axis.
+    /// @param angleRad angle in radians
+    /// @return reference to this for chaining
     public Transform rotateLocalZ(float angleRad) {
         return rotateLocal(UNIT_Z, angleRad);
     }
 
-    /// Rotate by `angleRad` about local basis Z axis (pointing to viewer).
+    /// Local (mathematical object-space) rotate the transform about Z axis.
+    /// @param angleRad angle in radians
+    /// @return reference to this for chaining
     public Transform rotateLocalBasisZ(float angleRad) {
         return rotateLocalBasis(UNIT_Z, angleRad);
     }
 
-    /// Scale by `x`, `y` and `z`.
+    /// Scale the transform by give scaling factors. Always local space.
+    /// @param x scaling factor on X axis
+    /// @param y scaling factor on Y axis
+    /// @param z scaling factor on Z axis
+    /// @return reference to this for chaining
     public Transform scaleBy(float x, float y, float z) {
         this.scale.scale(x, y, z);
         return this;
     }
 
-    /// Scale by given vector's components.
+    /// Scale the transform by give scaling factors. Always local space.
+    /// @param scale 3D vector with scaling factors
+    /// @return reference to this for chaining
     public Transform scaleBy(Vec3 scale) {
         this.scale.scale(scale.x, scale.y, scale.z);
         return this;
     }
 
-    /// Scale uniformly by given factor.
+    /// Uniformly scale the transform by give scaling factors. Always local space.
+    /// @param uniformScale uniform scaling factor
+    /// @return reference to this for chaining
     public Transform scaleBy(float uniformScale) {
         this.scale.scale(uniformScale);
         return this;
     }
 
-    /// Makes this transform look at specified target.
-    /// @param target the position of target
-    /// @param worldUp the world up axis (typically 0,1,0)
+    /// Make this transform look at specified target (works in object local space).
+    /// @param target the position of the target
+    /// @param worldUp global UP axis
     public Transform lookAt(Vec3 target, Vec3 worldUp) {
         // 1. Calculate direction to target
         //    direction = normalize(target - position)
@@ -363,17 +452,18 @@ public final class Transform {
         return this;
     }
 
-    /// Get mathematical basis vectors.
-    /// @param destX - store the X vector (right). Can be null.
-    /// @param destY - store the Y vector (up). Can be null.
-    /// @param destZ - store the Z vector (backward, negated forward) Can be null.
+    /// Get basis vectors (mathematical local space)
+    /// @param destX the X vector (right from object's perspective)
+    /// @param destY the Y vector (up from object's perspective)
+    /// @param destZ the Z vector (backward from object's perspective)
     public void getBasisVectors(Vec3 destX, Vec3 destY, Vec3 destZ) {
         this.rotation.toBasis(destX, destY, destZ);
     }
 
-    /// Get the right vector.
-    /// @param right  store for right vector. If null new object is allocated.
-    /// @return _right_ vector or, if _right_ is null, new Vec3
+    /// Get right vector (no allocation). This is right vector from object perspective and will equal to X basis
+    /// vector.
+    /// @param right the vector where result is stored
+    /// @return reference to `right`
     public Vec3 getRightVector(Vec3 right) {
         if (right == null) {
             right = new Vec3();
@@ -382,14 +472,15 @@ public final class Transform {
         return right;
     }
 
-    /// Get right vector. Always allocate.
+    /// Get right vector (allocation).
+    /// @return reference to new Vec3
     public Vec3 getRightVector() {
         return getRightVector(null);
     }
 
-    /// Get the up vector.
-    /// @param up store for up vector. If null new object is allocated.
-    /// @return _up_ vector or, if _up_ is null, new Vec3
+    /// Get up vector (no allocation). This is up vector from object perspective and will equal to Y basis vector.
+    /// @param up the vector where the result is stored
+    /// @return reference to `up`
     public Vec3 getUpVector(Vec3 up) {
         if (up == null) {
             up = new Vec3();
@@ -398,14 +489,16 @@ public final class Transform {
         return up;
     }
 
-    /// Get up vector. Always allocate.
+    /// Get up vector (allocation).
+    /// @return reference to new Vec3
     public Vec3 getUpVector() {
         return getUpVector(null);
     }
 
-    /// Get the forward vector. By OpenGL convention this is negative Z axis.
-    /// @param forward store for forward vector. If null new object is allocated.
-    /// @return _forward_ vector or, if _forward_ is null, new Vec3
+    /// Get forward vector (no allocation). This is forward vector from object perspective and will equal
+    /// negative Z basis vector.
+    /// @param forward the vector where the result is stored
+    /// @return reference to `forward`
     public Vec3 getForwardVector(Vec3 forward) {
         if (forward == null) {
             forward = new Vec3();
@@ -415,12 +508,17 @@ public final class Transform {
         return forward;
     }
 
-    /// Get the forward vector - always allocate.
+    /// Get forward vector (allocation)
+    /// @return reference to new Vec3
     public Vec3 getForwardVector() {
         return getForwardVector(null);
     }
 
-    /// Apply the transformation to a position.
+    /// Transform a _position_ to space given by this _transform_. Position is transformed in-place.
+    ///
+    /// **NOTE**: not efficient for arrays
+    /// @param pos the position that is transformed in-place.
+    /// @return reference to transformed `pos`
     public Vec3 transformPosition(Vec3 pos) {
         final float m00 = (1 - 2*(rotation.y * rotation.y + rotation.z * rotation.z))*scale.x;
         final float m01 = 2*(rotation.x*rotation.y - rotation.w*rotation.z)*scale.y;
@@ -447,7 +545,9 @@ public final class Transform {
         return pos;
     }
 
-    /// Apply the transformation to an array of positions.
+    /// Transform an array of _positions_ to space given by this _transform_. Positions are transformed in-place.
+    /// @param positions an array of positions that are transformed in-place.
+    /// @return reference to `positions` array.
     public Vec3[] transformPosition(Vec3[] positions) {
         final float m00 = (1 - 2*(rotation.y * rotation.y + rotation.z * rotation.z))*scale.x;
         final float m01 = 2*(rotation.x*rotation.y - rotation.w*rotation.z)*scale.y;
@@ -476,15 +576,21 @@ public final class Transform {
         return positions;
     }
 
-    /// Apply transformation to `count` positions stored in and array. Each position is 3 component float
-    /// and first position's component is at `positionArray+offset`. Each next position is `stride` components
-    /// distant. So basically:
+    /// Transforms positions in vertex data array. Designed for raw data that can be interleaved. Transform is
+    /// done in-place.
+    ///
+    /// #### Example
+    /// Lets say you have interleaved vertex data, each vertex 3 component position followed by 2 component texture coordinate.
+    /// You want to transform all positions.
+    /// ```java
+    /// float[] vertexData = ...;
+    /// transformer.transformPosition(vertexData, vertexData.length/5, 0, 5);
     /// ```
-    /// x = positionArray[offset + (index * stride) + 0];
-    /// y = positionArray[offset + (index * stride) + 1];
-    /// z = positionArray[offset + (index * stride) + 2];
-    /// ```
-    /// This function _transforms_ the point and stores it in-place.
+    ///
+    /// @param positionArray reference to vertex data with position data
+    /// @param count number of vertices to process
+    /// @param offset array offset to first component of first position
+    /// @param stride number of components per vertex
     public void transformPosition(float[] positionArray, int count, int offset, int stride) {
         final float m00 = (1 - 2*(rotation.y * rotation.y + rotation.z * rotation.z))*scale.x;
         final float m01 = 2*(rotation.x*rotation.y - rotation.w*rotation.z)*scale.y;
@@ -516,10 +622,11 @@ public final class Transform {
         }
     }
 
-    /// Transforms the normal with non-uniform transpose-inverse of rotation-scale matrix.
-    /// Since we can have non-uniform scale the normal is normalized back to preserve unit length.
-    /// @param normal the normal where the result is stored
-    /// @return reference to `normal`
+    /// Transform a _normal_ to space given by this _transform_. Normal is transformed in-place.
+    ///
+    /// **NOTE**: not efficient for arrays
+    /// @param normal the normal that is transformed
+    /// @return reference to transformed `normal`
     public Vec3 transformNormal(Vec3 normal) {
         // Normals are transformed by inverse transpose of the 3x3 rotation-scale portion of
         // the matrix.
@@ -559,9 +666,9 @@ public final class Transform {
         return normal.normalize();
     }
 
-    /// Same as `transformNormal` but transforms array of normals.
-    /// @param normals an array of normals.
-    /// @return reference to array of normals `normals`
+    /// Transform an array of _normals_ to space given by this _transform_. Normals are transformed in-place.
+    /// @param normals an array of normals that are transformed in-place.
+    /// @return reference to `normals` array.
     public Vec3[] transformNormal(Vec3[] normals) {
         final float oneOverSx = 1.0f / scale.x;
         final float oneOverSy = 1.0f / scale.y;
@@ -592,11 +699,21 @@ public final class Transform {
         return normals;
     }
 
-    /// Same as `transformNormal` but transforms over an array of floats.
-    /// @param normalArray an array where normal data is stored
-    /// @param count number of normals we will process
-    /// @param offset index of first normal's component in the array
-    /// @param stride number of _float elements_ between each normal
+    /// Transforms normals in vertex data array. Designed for raw data that can be interleaved. Transform is
+    /// done in-place.
+    ///
+    /// #### Example
+    /// Lets say you have interleaved vertex data, each vertex 3 component position followed by 3 component normal.
+    /// You want to transform all normals.
+    /// ```java
+    /// float[] vertexData = ...;
+    /// transformer.transformNormal(vertexData, vertexData.length/6, 3, 6);
+    /// ```
+    ///
+    /// @param normalArray reference to vertex data with normal data
+    /// @param count number of vertices to process
+    /// @param offset array offset to first component of first normal
+    /// @param stride number of components per vertex
     public void transformNormal(float[] normalArray, int count, int offset, int stride) {
         final float oneOverSx = 1.0f / scale.x;
         final float oneOverSy = 1.0f / scale.y;
@@ -633,10 +750,8 @@ public final class Transform {
         }
     }
 
-
-    /// Transforms the normal with non-uniform transpose-inverse of rotation-scale matrix.
-    /// This method is same as `transformNormal` but normal is not normalized.
-    /// @param normal the normal where the result is stored
+    /// Same as {@link Transform#transformNormal(Vec3)} but does not normalize the normal.
+    /// @param normal reference to normal that is transformed in-place
     /// @return reference to `normal`
     public Vec3 transformNormalUnnormalized(Vec3 normal) {
         // See transformNormal for math explanation.
@@ -667,9 +782,9 @@ public final class Transform {
         return normal;
     }
 
-    /// Same as `transformNormalUnnormalized` but transforms array of normals.
-    /// @param normals an array of normals.
-    /// @return reference to array of normals `normals`
+    /// Same as {@link Transform#transformNormal(Vec3[])} but does not normalize the normals.
+    /// @param normals an array of normals that are transformed in-place.
+    /// @return reference to `normals` array.
     public Vec3[] transformNormalUnnormalized(Vec3[] normals) {
         final float oneOverSx = 1.0f / scale.x;
         final float oneOverSy = 1.0f / scale.y;
@@ -699,11 +814,11 @@ public final class Transform {
         return normals;
     }
 
-    /// Same as `transformNormalUnnormalized` but transforms over an array of floats.
-    /// @param normalArray an array where normal data is stored
-    /// @param count number of normals we will process
-    /// @param offset index of first normal's component in the array
-    /// @param stride number of _float elements_ between each normal
+    /// Same as {@link Transform#transformNormal(float[], int, int, int)} but does not normalize the normals.
+    /// @param normalArray reference to vertex data with normal data
+    /// @param count number of vertices to process
+    /// @param offset array offset to first component of first normal
+    /// @param stride number of components per vertex
     public void transformNormalUnnormalized(float[] normalArray, int count, int offset, int stride) {
         final float oneOverSx = 1.0f / scale.x;
         final float oneOverSy = 1.0f / scale.y;
@@ -736,6 +851,8 @@ public final class Transform {
         }
     }
 
+    /// Convert the transform into transform matrix (4x4).
+    /// @param dest Mat4 where result is stored
     public void toMatrix(Mat4 dest) {
         // Matrix transform order Scale -> Rotation -> Translation
         // Matrix = Translation * Rotation * Scale
@@ -760,6 +877,9 @@ public final class Transform {
         dest.m33 = 1;
     }
 
+    /// Convert the transform into transform matrix and store its coefficients into an array.
+    /// @param dest destination array
+    /// @param offset offset in array where first element is stored
     public void toMatrixFloatArray(float[] dest, int offset) {
         //noinspection PointlessArithmeticExpression
         dest[offset + 0] = (1 - 2*(rotation.y * rotation.y + rotation.z * rotation.z))*scale.x;
@@ -783,6 +903,8 @@ public final class Transform {
         dest[offset + 15] = 1;
     }
 
+    /// Convert the transform into inverse transform matrix (4x4).
+    /// @param dest Mat4 where result is stored
     public void toInverseMatrix(Mat4 dest) {
         // Matrix transform order Scale -> Rotation -> Translation
         // Matrix = Translation * Rotation * Scale
@@ -800,22 +922,22 @@ public final class Transform {
         float ty = position.y;
         float tz = position.z;
 
-        float oneOverX = 1.0f / scale.x;
+        float oneOverX = safeOneOver(scale.x, EPSILON6);
         dest.m00 = (1 - 2 * (qy*qy + qz*qz)) * oneOverX;
         dest.m01 = (2 * (qx * qy + qw * qz)) * oneOverX;
         dest.m02 = (2 * (-qw * qy + qx * qz)) * oneOverX;
         dest.m03 = ((-1 + 2*qy*qy + 2*qz*qz)*tx - 2*(qx*qy*ty + qw*qz*ty - qw*qy*tz + qx*qz*tz)) * oneOverX;
 
-        float oneOverY = 1.0f / scale.y;
+        float oneOverY = safeOneOver(scale.y, EPSILON6);
         dest.m10 = (2*qx*qy - 2*qw*qz) * oneOverY;
         dest.m11 = (1 - 2*(qx*qx + qz*qz)) * oneOverY;
         dest.m12 = (2*(qw*qx + qy*qz)) * oneOverY;
         dest.m13 = -(2*qx*qy*tx - 2*qw*qz*tx + ty - 2*qx*qx*ty - 2*qz*qz*ty + 2*qw*qx*tz + 2*qy*qz*tz) * oneOverY;
 
-        float oneOverZ = 1.0f / scale.z;
+        float oneOverZ = safeOneOver(scale.z, EPSILON6);
         dest.m20 = 2*(qw*qy + qx*qz) * oneOverZ;
         dest.m21 = 2*(-qw*qx + qy*qz) * oneOverZ;
-        dest.m22 = 1 - 2*(qx*qx + qy*qy) * oneOverZ;
+        dest.m22 = (1 - 2*(qx*qx + qy*qy)) * oneOverZ;
         dest.m23 = -(2*qw*qy*tx + 2*qx*qz*tx - 2*qw*qx*ty + 2*qy*qz*ty + tz - 2*qx*qx*tz - 2*qy*qy*tz) * oneOverZ;
 
         dest.m30 = 0;
@@ -824,6 +946,9 @@ public final class Transform {
         dest.m33 = 1;
     }
 
+    /// Convert the transform into inverse transform matrix and store its coefficients into an array.
+    /// @param dest destination array
+    /// @param offset offset in array where first element is stored
     public void toInverseMatrixFloatArray(float[] dest, int offset) {
         float qx = rotation.x;
         float qy = rotation.y;
@@ -833,37 +958,29 @@ public final class Transform {
         float ty = position.y;
         float tz = position.z;
 
-        float oneOverX = 1.0f / scale.x;
+        float oneOverX = safeOneOver(scale.x, EPSILON6);
         //noinspection PointlessArithmeticExpression
         dest[offset + 0] = (1 - 2 * (qy*qy + qz*qz)) * oneOverX;
         dest[offset + 1] = (2 * (qx * qy + qw * qz)) * oneOverX;
         dest[offset + 2] = (2 * (-qw * qy + qx * qz)) * oneOverX;
         dest[offset + 3] = ((-1 + 2*qy*qy + 2*qz*qz)*tx - 2*(qx*qy*ty + qw*qz*ty - qw*qy*tz + qx*qz*tz)) * oneOverX;
 
-        float oneOverY = 1.0f / scale.y;
+        float oneOverY = safeOneOver(scale.y, EPSILON6);
         dest[offset + 4] = (2*qx*qy - 2*qw*qz) * oneOverY;
         dest[offset + 5] = (1 - 2*(qx*qx + qz*qz)) * oneOverY;
         dest[offset + 6] = (2*(qw*qx + qy*qz)) * oneOverY;
         dest[offset + 7] = -(2*qx*qy*tx - 2*qw*qz*tx + ty - 2*qx*qx*ty - 2*qz*qz*ty + 2*qw*qx*tz + 2*qy*qz*tz) * oneOverY;
 
-        float oneOverZ = 1.0f / scale.z;
+        float oneOverZ = safeOneOver(scale.z, EPSILON6);
         dest[offset + 8] = 2*(qw*qy + qx*qz) * oneOverZ;
         dest[offset + 9] = 2*(-qw*qx + qy*qz) * oneOverZ;
-        dest[offset + 10] = 1 - 2*(qx*qx + qy*qy) * oneOverZ;
+        dest[offset + 10] = (1 - 2*(qx*qx + qy*qy)) * oneOverZ;
         dest[offset + 11] = -(2*qw*qy*tx + 2*qx*qz*tx - 2*qw*qx*ty + 2*qy*qz*ty + tz - 2*qx*qx*tz - 2*qy*qy*tz) * oneOverZ;
 
         dest[offset + 12] = 0;
         dest[offset + 13] = 0;
         dest[offset + 14] = 0;
         dest[offset + 15] = 1;
-    }
-
-
-    /// Interpolate between two transforms
-    public static void interpolate(Transform a, Transform b, float t, Transform dest) {
-        Vec3.lerp(a.position, b.position, t, dest.position);
-        Vec3.lerp(a.scale, b.scale, t, dest.scale);
-        Quaternion.slerp(a.rotation, b.rotation, t, dest.rotation);
     }
 
 
