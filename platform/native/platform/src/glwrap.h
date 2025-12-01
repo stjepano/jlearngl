@@ -30,6 +30,7 @@ typedef struct {
 PLATFORM_API void jglViewport(jGLint x, jGLint y, jGLsizei w, jGLsizei h);
 PLATFORM_API jboolean jglPolygonMode(jGLenum mode);
 PLATFORM_API jboolean jglDepthStateConfigure(const DepthState* depth_state);
+PLATFORM_API jboolean jglCullStateConfigure(jboolean enabled, jGLenum face_side, jGLenum face_winding);
 
 PLATFORM_API void jglClearNamedFramebufferiv(jGLuint framebuffer, jGLenum buffer, jGLint drawbuffer, const jGLint *value);
 PLATFORM_API void jglClearNamedFramebufferuiv(jGLuint framebuffer, jGLenum buffer, jGLint drawbuffer, const jGLuint *value);

@@ -42,6 +42,14 @@ public final class Transform {
         return this.rotation;
     }
 
+    /// Set this transform to identity (position = 0,0,0; scale = 1,1,1; rotation = no rotation).
+    public Transform setIdentity() {
+        this.position.set(0, 0, 0);
+        this.scale.set(1, 1, 1);
+        this.rotation.set(0, 0, 0, 1);
+        return this;
+    }
+
     /// Set position to 3D vector given by its coordinates.
     /// @param x x component of the 3D vector
     /// @param y y component of the 3D vector

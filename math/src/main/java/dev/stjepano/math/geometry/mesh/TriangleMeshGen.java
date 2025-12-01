@@ -19,12 +19,12 @@ public final class TriangleMeshGen implements MeshGen {
     private final Vec3 currentNormal = new Vec3(0.0f, 0.0f, 1.0f);
     private final Vec2 currentTexCoord = new Vec2(0.0f, 0.0f);
 
-    private int colorOffset = -1;
-    private int normalOffset = -1;
-    private int texCoordOffset = -1;
-    private boolean hasColor = false;
-    private boolean hasNormal = false;
-    private boolean hasTexCoord = false;
+    private final int colorOffset;
+    private final int normalOffset;
+    private final int texCoordOffset;
+    private final boolean hasColor;
+    private final boolean hasNormal;
+    private final boolean hasTexCoord;
 
 
     private float[] vertexData;
@@ -32,7 +32,7 @@ public final class TriangleMeshGen implements MeshGen {
     private int vertexCount = 0;
     private int indexCount = 0;
 
-    private float[] currentVertex;
+    private final float[] currentVertex;
     private int activeTriangleBatchVertexStart = 0;
     private int activeTriangleBatchVertexCount = 0;
     private int activeTriangleBatchIndexStart = 0;
@@ -208,9 +208,9 @@ public final class TriangleMeshGen implements MeshGen {
             throw new IllegalStateException("No triangles were added between beginTriangles() and endTriangles()");
         }
 
-        this.origin.transformPosition(vertexData, activeTriangleBatchVertexCount, 0, vertexFormat.stride());
+        this.origin.transformPosition(vertexData, activeTriangleBatchVertexCount, this.activeTriangleBatchVertexStart * vertexFormat.stride(), vertexFormat.stride());
         if (hasNormal) {
-            this.origin.transformNormal(vertexData, activeTriangleBatchVertexCount, normalOffset, vertexFormat.stride());
+            this.origin.transformNormal(vertexData, activeTriangleBatchVertexCount, this.activeTriangleBatchVertexStart * vertexFormat.stride() + normalOffset, vertexFormat.stride());
         }
 
         vertexCount += activeTriangleBatchVertexCount;
@@ -487,7 +487,115 @@ public final class TriangleMeshGen implements MeshGen {
 
     @Override
     public MeshGen addCylinder(float radius, float height, int numSlices, int numRings, boolean caps) {
-        return null;
+        float dTheta = (float)(2.0f * Math.PI / numSlices);
+        float dHeight = height / numRings;
+        float bottom = -height / 2.0f;
+        float top = -bottom;
+
+        beginTriangles();
+        color(this.currentColor.x, this.currentColor.y, this.currentColor.z);
+        for (int row = 0; row < numRings; row++) {
+            float theta = (float) Math.PI / 2.0f;
+            for (int col = 0; col < numSlices; col++) {
+                float x0 = radius * (float)Math.cos(theta);
+                float z0 = radius * (float)Math.sin(theta);
+                float x1 = radius * (float)Math.cos(theta + dTheta);
+                float z1 = radius * (float)Math.sin(theta + dTheta);
+                float y0 = bottom + row * dHeight;
+                float y1 = bottom + (row + 1) * dHeight;
+
+                float s0 = (float)col / (float)numSlices;
+                float s1 = (float)(col + 1) / (float)numSlices;
+                float t0 = (float)row / (float)numRings;
+                float t1 = (float)(row + 1) / (float)numRings;
+
+                // first triangle
+                normal(x0/radius, 0.0f, z0/radius);
+                texCoord(s0, t0);
+                position(x0, y0, z0);
+
+                normal(x1/radius, 0.0f, z1/radius);
+                texCoord(s1, t1);
+                position(x1, y1, z1);
+
+                normal(x1/radius, 0.0f, z1/radius);
+                texCoord(s1, t0);
+                position(x1, y0, z1);
+
+                // second triangle
+                normal(x0/radius, 0.0f, z0/radius);
+                texCoord(s0, t0);
+                position(x0, y0, z0);
+
+                normal(x0/radius, 0.0f, z0/radius);
+                texCoord(s0, t1);
+                position(x0, y1, z0);
+
+                normal(x1/radius, 0.0f, z1/radius);
+                texCoord(s1, t1);
+                position(x1, y1, z1);
+
+
+                theta += dTheta;
+            }
+        }
+
+        if (caps) {
+            // top cap
+            normal(0.0f, 1.0f, 0.0f);
+            float theta = (float) Math.PI / 2.0f;
+            for (int col = 0; col < numSlices; col++) {
+                float x0 = radius * (float)Math.cos(theta);
+                float z0 = radius * (float)Math.sin(theta);
+                float x1 = radius * (float)Math.cos(theta + dTheta);
+                float z1 = radius * (float)Math.sin(theta + dTheta);
+
+                float s0 = 0.5f + 0.5f * (x0 / radius);
+                float t0 = 0.5f + 0.5f * (z0 / radius);
+                float s1 = 0.5f + 0.5f * (x1 / radius);
+                float t1 = 0.5f + 0.5f * (z1 / radius);
+
+                texCoord(0.5f, 0.5f);
+                position(0.0f, top, 0.0f);
+
+                texCoord(s1, t1);
+                position(x1, top, z1);
+
+                texCoord(s0, t0);
+                position(x0, top, z0);
+
+                theta += dTheta;
+            }
+
+            // bottom cap
+            normal(0.0f, -1.0f, 0.0f);
+            theta = (float) Math.PI / 2.0f;
+            for (int col = 0; col < numSlices; col++) {
+                float x0 = radius * (float) Math.cos(theta);
+                float z0 = radius * (float) Math.sin(theta);
+                float x1 = radius * (float) Math.cos(theta + dTheta);
+                float z1 = radius * (float) Math.sin(theta + dTheta);
+
+                float s0 = 0.5f + 0.5f * (x0 / radius);
+                float t0 = 0.5f + 0.5f * (z0 / radius);
+                float s1 = 0.5f + 0.5f * (x1 / radius);
+                float t1 = 0.5f + 0.5f * (z1 / radius);
+
+                texCoord(0.5f, 0.5f);
+                position(0.0f, bottom, 0.0f);
+
+                texCoord(s0, t0);
+                position(x0, bottom, z0);
+
+                texCoord(s1, t1);
+                position(x1, bottom, z1);
+                theta += dTheta;
+            }
+        }
+
+        endTriangles();
+
+        return this;
     }
 
     @Override

@@ -43,10 +43,17 @@ public class CoordinateSystemsTutorial {
 
             gl.viewport(0, 0, window.framebufferWidth(), window.framebufferHeight());
 
-            DepthState depthState = DepthState.builder()
+            final DepthState depthState = DepthState.builder()
                     .enable(true)
                     .build();
             gl.depthState(depthState);
+
+            final CullState cullState = CullState.builder()
+                    .enable(true)
+                    .cullMode(GLFaceSide.BACK)
+                    .frontFaceWinding(GLFaceWinding.CCW)
+                    .build();
+            gl.cullState(cullState);
 
             float aspect = (float) window.framebufferWidth() / (float) window.framebufferHeight();
             this.projection.setPerspective((float) Math.toRadians(45.0f), aspect, 0.1f, 100.0f);
@@ -149,14 +156,19 @@ public class CoordinateSystemsTutorial {
 
     private void deleteProgram() {
         this.shaderProgram.delete();
-
     }
 
 
     private void loadMesh() {
         try (Arena arena = Arena.ofConfined()) {
             TriangleMeshGen meshGen = new TriangleMeshGen(IndexedMesh.VertexFormat.AttributeType.COLOR, IndexedMesh.VertexFormat.AttributeType.TEX_COORD);
-            this.mesh = meshGen.addCube(1.0f, 1.0f, 1.0f).build();
+            //this.mesh = meshGen.addCube(1.0f, 1.0f, 1.0f).build();
+            meshGen.addCylinder(0.4f, 1.0f, 32, 2, false);
+            meshGen.origin().translate(0, 0.75f, 0).rotateLocalY((float)Math.toRadians(45.0));
+            meshGen.addCube(1.0f, 0.5f, 1.0f);
+            meshGen.origin().setIdentity().translate(0.0f, -1.0f, 0.0f);
+            meshGen.addCube(1.0f, 1.0f, 1.0f);
+            this.mesh = meshGen.build();
 
             MemorySegment verticesPtr = arena.allocateFrom(ValueLayout.JAVA_FLOAT, mesh.vertexData());
             MemorySegment indicesPtr = arena.allocateFrom(ValueLayout.JAVA_INT, mesh.indices());

@@ -164,5 +164,8 @@ interface JGLBindings {
 
     @NativeBinding
     boolean jglDepthStateConfigure(MemorySegment depthStatePtr);
+
+    @NativeBinding
+    boolean jglCullStateConfigure(boolean enabled, int faceSide, int faceWinding);
 }
 

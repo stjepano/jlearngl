@@ -37,6 +37,19 @@ jboolean jglDepthStateConfigure(const DepthState *depth_state) {
     return glGetError() == GL_NO_ERROR;
 }
 
+jboolean jglCullStateConfigure(jboolean enabled, jGLenum face_side, jGLenum face_winding) {
+    if (enabled) {
+        glEnable(GL_CULL_FACE);
+    } else {
+        glDisable(GL_CULL_FACE);
+    }
+
+    glCullFace((GLenum) face_side);
+    glFrontFace((GLenum) face_winding);
+
+    return glGetError() == GL_NO_ERROR;
+}
+
 
 void jglClearNamedFramebufferiv(jGLuint framebuffer, jGLenum buffer, jGLint drawbuffer, const jGLint *value) {
     glClearNamedFramebufferiv((GLuint) framebuffer, (GLenum) buffer, (GLint) drawbuffer, (const GLint *) value);

@@ -26,6 +26,12 @@ public interface OpenGL {
     /// @param depthState the depth state to set.
     void depthState(DepthState depthState);
 
+    /// Set the face culling state.
+    ///
+    /// Enables or disables face culling, sets which face to cull and the front face winding order.
+    /// @param cullState the cull state to set.
+    void cullState(CullState cullState);
+
     /// Select a polygon rasterization mode
     /// @param mode specifies how polygons will be rasterized (default FILL)
     void polygonMode(GLPolygonRasterMode mode);

@@ -68,6 +68,13 @@ public class OpenGLImpl implements OpenGL {
     }
 
     @Override
+    public void cullState(CullState cullState) {
+        if (!JGL.jglCullStateConfigure(cullState.enabled(), cullState.cullMode().glEnumValue(), cullState.frontFaceWinding().glEnumValue())) {
+            throw new OpenGLException("Failed to set cull state: " + cullState);
+        }
+    }
+
+    @Override
     public void polygonMode(GLPolygonRasterMode mode) {
         if (!JGL.jglPolygonMode(mode.glEnumValue())) {
             throw new OpenGLException("Failed to set polygon raster mode " + mode);
