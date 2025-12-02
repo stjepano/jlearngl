@@ -1,5 +1,6 @@
 package dev.stjepano.math.geometry.mesh;
 
+import dev.stjepano.math.MathUtil;
 import dev.stjepano.math.Transform;
 import dev.stjepano.math.Vec2;
 import dev.stjepano.math.Vec3;
@@ -494,51 +495,7 @@ public final class TriangleMeshGen implements MeshGen {
 
         beginTriangles();
         color(this.currentColor.x, this.currentColor.y, this.currentColor.z);
-        for (int row = 0; row < numRings; row++) {
-            float theta = (float) Math.PI / 2.0f;
-            for (int col = 0; col < numSlices; col++) {
-                float x0 = radius * (float)Math.cos(theta);
-                float z0 = radius * (float)Math.sin(theta);
-                float x1 = radius * (float)Math.cos(theta + dTheta);
-                float z1 = radius * (float)Math.sin(theta + dTheta);
-                float y0 = bottom + row * dHeight;
-                float y1 = bottom + (row + 1) * dHeight;
-
-                float s0 = (float)col / (float)numSlices;
-                float s1 = (float)(col + 1) / (float)numSlices;
-                float t0 = (float)row / (float)numRings;
-                float t1 = (float)(row + 1) / (float)numRings;
-
-                // first triangle
-                normal(x0/radius, 0.0f, z0/radius);
-                texCoord(s0, t0);
-                position(x0, y0, z0);
-
-                normal(x1/radius, 0.0f, z1/radius);
-                texCoord(s1, t1);
-                position(x1, y1, z1);
-
-                normal(x1/radius, 0.0f, z1/radius);
-                texCoord(s1, t0);
-                position(x1, y0, z1);
-
-                // second triangle
-                normal(x0/radius, 0.0f, z0/radius);
-                texCoord(s0, t0);
-                position(x0, y0, z0);
-
-                normal(x0/radius, 0.0f, z0/radius);
-                texCoord(s0, t1);
-                position(x0, y1, z0);
-
-                normal(x1/radius, 0.0f, z1/radius);
-                texCoord(s1, t1);
-                position(x1, y1, z1);
-
-
-                theta += dTheta;
-            }
-        }
+        generateCylinderShellTriangles(radius, height, numSlices, numRings, 0, 1);
 
         if (caps) {
             // top cap
@@ -598,25 +555,540 @@ public final class TriangleMeshGen implements MeshGen {
         return this;
     }
 
+    /// Generate cylinder shell triangles without colors. You must wrap in beginTriangles() and endTriangles().
+    private void generateCylinderShellTriangles(float radius, float height, int numSlices, int numRings, float minT, float maxT) {
+        float dTheta = (float)(2.0f * Math.PI / numSlices);
+        float dHeight = height / numRings;
+        float bottom = -height / 2.0f;
+        float top = -bottom;
+
+        float tRange = maxT - minT;
+
+        for (int row = 0; row < numRings; row++) {
+            float theta = (float) Math.PI / 2.0f;
+            for (int col = 0; col < numSlices; col++) {
+                final float nx0 = (float)Math.cos(theta);
+                final float nz0 = (float)Math.sin(theta);
+                final float nx1 = (float)Math.cos(theta + dTheta);
+                final float nz1 = (float)Math.sin(theta + dTheta);
+                final float x0 = radius * nx0;
+                final float z0 = radius * nz0;
+                final float x1 = radius * nx1;
+                final float z1 = radius * nz1;
+                final float y0 = bottom + row * dHeight;
+                final float y1 = bottom + (row + 1) * dHeight;
+
+                final float s0 = (float)col / (float)numSlices;
+                final float s1 = (float)(col + 1) / (float)numSlices;
+                final float t0 = (row / (float)numRings) * tRange + minT;
+                final float t1 = ((row + 1) / (float)numRings) * tRange + minT;
+
+                // first triangle
+                normal(nx0, 0.0f, nz0);
+                texCoord(s0, t0);
+                position(x0, y0, z0);
+
+                normal(nx1, 0.0f, nz1);
+                texCoord(s1, t1);
+                position(x1, y1, z1);
+
+                normal(nx1, 0.0f, nz1);
+                texCoord(s1, t0);
+                position(x1, y0, z1);
+
+                // second triangle
+                normal(nx0, 0.0f, nz0);
+                texCoord(s0, t0);
+                position(x0, y0, z0);
+
+                normal(nx0, 0.0f, nz0);
+                texCoord(s0, t1);
+                position(x0, y1, z0);
+
+                normal(nx1, 0.0f, nz1);
+                texCoord(s1, t1);
+                position(x1, y1, z1);
+
+
+                theta += dTheta;
+            }
+        }
+    }
+
     @Override
     public MeshGen addSphere(float radius, int numSlices, int numRings) {
-        return null;
+
+        /*
+
+        Coordinate system is as follows:
+
+            y
+            |
+            |
+            |____ x
+           /
+          / z
+
+          Usually spherical coordinates are defined as:
+            x = r sin(theta) cos(phi)
+            y = r sin(theta) sin(phi)
+            z = r cos(theta)
+
+          However, to match the above coordinate system, we have z in place of x, x in place of y and y in place of z:
+            x = r sin(phi) cos(theta)
+            y = r cos(phi)
+            z = r sin(phi) sin(theta)
+
+          Theta varies from 0 to 2PI (around y axis)
+          Phi varies from 0 to PI (from top to bottom)
+
+         */
+        float dTheta = (float)(2.0f * Math.PI / numSlices);
+        float dPhi = (float)(Math.PI / numRings);
+        float dS = 1.0f / numSlices;
+        float dT = 1.0f / numRings;
+
+        beginTriangles();
+        color(this.currentColor.x, this.currentColor.y, this.currentColor.z);
+
+        float phi = 0.0f;
+        for (int row = 0; row < numRings; row++) {
+            float theta = (float) Math.PI / 2.0f; // start at "back" of sphere (-z)
+            for (int col = 0; col < numSlices; col++) {
+                final float sinTheta0 = (float)Math.sin(theta);
+                final float cosTheta0 = (float)Math.cos(theta);
+                final float sinTheta1 = (float)Math.sin(theta + dTheta);
+                final float cosTheta1 = (float)Math.cos(theta + dTheta);
+                final float sinPhi0 = (float)Math.sin(phi);
+                final float cosPhi0 = (float)Math.cos(phi);
+                final float sinPhi1 = (float)Math.sin(phi + dPhi);
+                final float cosPhi1 = (float)Math.cos(phi + dPhi);
+
+                final float nx0 = sinPhi0 * cosTheta0;
+                //noinspection UnnecessaryLocalVariable
+                final float ny0 = cosPhi0;
+                final float nz0 = sinPhi0 * sinTheta0;
+
+                final float nx1 = sinPhi0 * cosTheta1;
+                //noinspection UnnecessaryLocalVariable
+                final float ny1 = cosPhi0;
+                final float nz1 = sinPhi0 * sinTheta1;
+
+                final float nx2 = sinPhi1 * cosTheta1;
+                //noinspection UnnecessaryLocalVariable
+                final float ny2 = cosPhi1;
+                final float nz2 = sinPhi1 * sinTheta1;
+
+                final float nx3 = sinPhi1 * cosTheta0;
+                //noinspection UnnecessaryLocalVariable
+                final float ny3 = cosPhi1;
+                final float nz3 = sinPhi1 * sinTheta0;
+
+                // first triangle
+                normal(nx0, ny0, nz0);
+                texCoord((float)col * dS, 1.0f - (float)row * dT);
+                position(radius * nx0, radius * ny0, radius * nz0);
+
+                normal(nx1, ny1, nz1);
+                texCoord((float)(col + 1) * dS, 1.0f - (float)row * dT);
+                position(radius * nx1, radius * ny1, radius * nz1);
+
+                normal(nx2, ny2, nz2);
+                texCoord((float)(col + 1) * dS, 1.0f - (float)(row + 1) * dT);
+                position(radius * nx2, radius * ny2, radius * nz2);
+
+                // second triangle
+                normal(nx0, ny0, nz0);
+                texCoord((float)col * dS, 1.0f - (float)row * dT);
+                position(radius * nx0, radius * ny0, radius * nz0);
+
+                normal(nx2, ny2, nz2);
+                texCoord((float)(col + 1) * dS, 1.0f - (float)(row + 1) * dT);
+                position(radius * nx2, radius * ny2, radius * nz2);
+
+                normal(nx3, ny3, nz3);
+                texCoord((float)col * dS, 1.0f - (float)(row + 1) * dT);
+                position(radius * nx3, radius * ny3, radius * nz3);
+
+                theta += dTheta;
+            }
+            phi += dPhi;
+        }
+
+        endTriangles();
+        return this;
     }
 
     @Override
     public MeshGen addCone(float radius, float height, int numSlices, int numRings) {
-        return null;
+        final float dTheta = (float)(2.0f * Math.PI / numSlices);
+        final float dHeight = height / numRings;
+        final float dRadius = radius / numRings;
+        final float bottom = -height / 2.0f;
+        final float top = -bottom;
+
+        // For smooth normals on cone surface
+        // Normal direction: (height * cos(theta), radius, height * sin(theta)) normalized
+        final float slantHeight = (float)Math.sqrt(height * height + radius * radius);
+        final float normalY = radius / slantHeight;
+        final float normalXZScale = height / slantHeight;
+
+        final float dS = 1.0f / numSlices;
+        final float dT = 1.0f / numRings;
+
+        beginTriangles();
+        color(this.currentColor.x, this.currentColor.y, this.currentColor.z);
+
+        // Cone shell (lateral surface)
+        for (int ring = 0; ring < numRings; ring++) {
+            float theta = (float) Math.PI / 2.0f;  // Reset theta each ring!
+
+            float y0 = bottom + ring * dHeight;
+            float y1 = bottom + (ring + 1) * dHeight;
+
+            // Radius decreases linearly from base to apex
+            float r0 = radius - ring * dRadius;
+            float r1 = radius - (ring + 1) * dRadius;
+
+            float t0 = (float) ring / numRings;
+            float t1 = (float) (ring + 1) / numRings;
+
+            boolean isApex = (r1 <= MathUtil.EPSILON4);
+
+            for (int slice = 0; slice < numSlices; slice++) {
+                float cosTheta0 = (float) Math.cos(theta);
+                float sinTheta0 = (float) Math.sin(theta);
+                float cosTheta1 = (float) Math.cos(theta + dTheta);
+                float sinTheta1 = (float) Math.sin(theta + dTheta);
+
+                float x0 = r0 * cosTheta0;
+                float z0 = r0 * sinTheta0;
+                float x1 = r0 * cosTheta1;
+                float z1 = r0 * sinTheta1;
+
+                // Normals (same along each slant line)
+                float nx0 = normalXZScale * cosTheta0;
+                float nz0 = normalXZScale * sinTheta0;
+                float nx1 = normalXZScale * cosTheta1;
+                float nz1 = normalXZScale * sinTheta1;
+
+                float s0 = (float) slice / numSlices;
+                float s1 = (float) (slice + 1) / numSlices;
+
+                if (isApex) {
+                    // At apex: generate ONE triangle from base edge to apex point
+                    normal(nx0, normalY, nz0);
+                    texCoord(s0, t0);
+                    position(x0, y0, z0);
+
+                    // Apex point (average normals for smooth shading)
+                    float len = Vec3.length((nx0 + nx1) * 0.5f, normalY, (nz0 + nz1) * 0.5f);
+                    normal(((nx0 + nx1) * 0.5f)/len, normalY/len, ((nz0 + nz1) * 0.5f)/len);
+                    texCoord((s0 + s1) * 0.5f, t1);
+                    position(0.0f, y1, 0.0f);
+
+                    normal(nx1, normalY, nz1);
+                    texCoord(s1, t0);
+                    position(x1, y0, z1);
+
+                } else {
+                    // Regular ring: generate quad (2 triangles)
+                    float x2 = r1 * cosTheta1;
+                    float z2 = r1 * sinTheta1;
+                    float x3 = r1 * cosTheta0;
+                    float z3 = r1 * sinTheta0;
+
+                    // First triangle
+                    normal(nx0, normalY, nz0);
+                    texCoord(s0, t0);
+                    position(x0, y0, z0);
+
+                    normal(nx0, normalY, nz0);
+                    texCoord(s0, t1);
+                    position(x3, y1, z3);
+
+                    normal(nx1, normalY, nz1);
+                    texCoord(s1, t1);
+                    position(x2, y1, z2);
+
+                    // Second triangle
+                    normal(nx0, normalY, nz0);
+                    texCoord(s0, t0);
+                    position(x0, y0, z0);
+
+                    normal(nx1, normalY, nz1);
+                    texCoord(s1, t1);
+                    position(x2, y1, z2);
+
+                    normal(nx1, normalY, nz1);
+                    texCoord(s1, t0);
+                    position(x1, y0, z1);
+                }
+
+                theta += dTheta;
+            }
+        }
+
+        // Base cap (optional, facing down)
+        if (radius > 0) {
+            float theta = (float) Math.PI / 2.0f;
+            normal(0.0f, -1.0f, 0.0f);  // Point down
+
+            for (int slice = 0; slice < numSlices; slice++) {
+                float cosTheta0 = (float) Math.cos(theta);
+                float sinTheta0 = (float) Math.sin(theta);
+                float cosTheta1 = (float) Math.cos(theta + dTheta);
+                float sinTheta1 = (float) Math.sin(theta + dTheta);
+
+                float x0 = radius * cosTheta0;
+                float z0 = radius * sinTheta0;
+                float x1 = radius * cosTheta1;
+                float z1 = radius * sinTheta1;
+
+                // Radial UV mapping for base
+                float u0 = 0.5f + 0.5f * cosTheta0;
+                float v0 = 0.5f + 0.5f * sinTheta0;
+                float u1 = 0.5f + 0.5f * cosTheta1;
+                float v1 = 0.5f + 0.5f * sinTheta1;
+
+                // Triangle fan from center
+                texCoord(0.5f, 0.5f);
+                position(0.0f, bottom, 0.0f);
+
+                texCoord(u0, v0);
+                position(x0, bottom, z0);
+
+                texCoord(u1, v1);
+                position(x1, bottom, z1);
+
+                theta += dTheta;
+            }
+        }
+
+        endTriangles();
+        return this;
     }
 
     @Override
     public MeshGen addPyramid(float width, float height, float depth) {
-        return null;
+
+        final float left = -width/2.0f;
+        final float right = -left;
+        final float front = depth/2.0f;
+        final float back = -front;
+        final float bottom = -height/2.0f;
+        final float top = -bottom;
+
+        beginTriangles();
+        color(this.currentColor.x, this.currentColor.y, this.currentColor.z);
+
+        // base
+        normal(0.0f, -1.0f, 0.0f);
+        texCoord(0.0f, 0.0f);
+        position(left, bottom, back);
+
+        texCoord(1.0f, 0.0f);
+        position(right, bottom, back);
+
+        texCoord(1.0f, 1.0f);
+        position(right, bottom, front);
+
+        texCoord(0.0f, 0.0f);
+        position(left, bottom, back);
+
+        texCoord(1.0f, 1.0f);
+        position(right, bottom, front);
+
+        texCoord(0.0f, 1.0f);
+        position(left, bottom, front);
+
+        // front face
+
+        final Vec3 edge1 = new Vec3( right - left, 0.0f, 0.0f).normalize();
+        final Vec3 edge2 = new Vec3(width/2.0f, height, -depth/2.0f).normalize();
+        final Vec3 faceNormal = edge1.cross(edge2).normalize();
+
+
+        normal(faceNormal.x, faceNormal.y, faceNormal.z);
+        texCoord(0.0f, 0.0f);
+        position(left, bottom, front);
+
+        texCoord(1.0f, 0.0f);
+        position(right, bottom, front);
+
+        texCoord(0.5f, 1.0f);
+        position(0.0f, top, 0.0f);
+
+        // back face
+        normal(faceNormal.x, faceNormal.y, -faceNormal.z);
+        texCoord(0.0f, 0.0f);
+        position(right, bottom, back);
+
+        texCoord(1.0f, 0.0f);
+        position(left, bottom, back);
+
+        texCoord(0.5f, 1.0f);
+        position(0.0f, top, 0.0f);
+
+        // right face
+        edge1.set(0.0f, 0.0f, back - front).normalize();
+        edge2.set(-width/2.0f, height, -depth/2.0f).normalize();
+        faceNormal.set(edge1).cross(edge2).normalize();
+
+        normal(faceNormal.x, faceNormal.y, faceNormal.z);
+        texCoord(0.0f, 0.0f);
+        position(right, bottom, front);
+
+        texCoord(1.0f, 0.0f);
+        position(right, bottom, back);
+
+        texCoord(0.5f, 1.0f);
+        position(0.0f, top, 0.0f);
+
+        // left face
+        normal(-faceNormal.x, faceNormal.y, faceNormal.z);
+        texCoord(0.0f, 0.0f);
+        position(left, bottom, back);
+
+        texCoord(1.0f, 0.0f);
+        position(left, bottom, front);
+
+        texCoord(0.5f, 1.0f);
+        position(0.0f, top, 0.0f);
+
+        endTriangles();
+        return this;
+    }
+
+    @Override
+    public MeshGen addCapsule(float radius, float cylinderHeight, int numSlices, int hemisphereRings) {
+        float totalHeight = cylinderHeight + 2.0f * radius;
+        float cylinderMinT = radius / totalHeight;
+        float cylinderMaxT = 1.0f - cylinderMinT;
+
+        beginTriangles();
+        color(currentColor.x, currentColor.y, currentColor.z);
+
+        // bottom hemisphere
+        generateHemisphere(radius, numSlices, hemisphereRings, (float) Math.PI/2.0f, (float) Math.PI, -(cylinderHeight/2.0f), cylinderMaxT, 1.0f);
+        // cylinder shell
+        generateCylinderShellTriangles(radius, cylinderHeight, numSlices, 1, cylinderMinT, cylinderMaxT);
+        // top hemisphere
+        generateHemisphere(radius, numSlices, hemisphereRings, 0.0f, (float) Math.PI/2.0f, (cylinderHeight/2.0f), 0, cylinderMinT);
+
+        endTriangles();
+        return this;
+    }
+
+
+    /// Helper method for hemisphere generation
+    private void generateHemisphere(float radius, int numSlices, int numRings,
+                                    float phiStart, float phiEnd,
+                                    float yOffset,
+                                    float tStart, float tEnd) {
+        final float dTheta = (float)(2.0f * Math.PI / numSlices);
+        final float dPhi = (phiEnd - phiStart) / numRings;
+        final float dS = 1.0f / numSlices;
+        final float dT = (tEnd - tStart) / numRings;
+
+        for (int ring = 0; ring < numRings; ring++) {
+            float theta = (float) Math.PI / 2.0f;  // Reset theta each ring
+            float phi0 = phiStart + ring * dPhi;
+            float phi1 = phiStart + (ring + 1) * dPhi;
+
+            float sinPhi0 = (float)Math.sin(phi0);
+            float cosPhi0 = (float)Math.cos(phi0);
+            float sinPhi1 = (float)Math.sin(phi1);
+            float cosPhi1 = (float)Math.cos(phi1);
+
+            float t0 = tStart + ring * dT;
+            float t1 = tStart + (ring + 1) * dT;
+
+            for (int slice = 0; slice < numSlices; slice++) {
+                float sinTheta0 = (float)Math.sin(theta);
+                float cosTheta0 = (float)Math.cos(theta);
+                float sinTheta1 = (float)Math.sin(theta + dTheta);
+                float cosTheta1 = (float)Math.cos(theta + dTheta);
+
+                // Calculate normals (same as positions but not scaled by radius)
+                float nx0 = sinPhi0 * cosTheta0;
+                //noinspection UnnecessaryLocalVariable
+                float ny0 = cosPhi0;
+                float nz0 = sinPhi0 * sinTheta0;
+
+                float nx1 = sinPhi0 * cosTheta1;
+                //noinspection UnnecessaryLocalVariable
+                float ny1 = cosPhi0;
+                float nz1 = sinPhi0 * sinTheta1;
+
+                float nx2 = sinPhi1 * cosTheta1;
+                //noinspection UnnecessaryLocalVariable
+                float ny2 = cosPhi1;
+                float nz2 = sinPhi1 * sinTheta1;
+
+                float nx3 = sinPhi1 * cosTheta0;
+                //noinspection UnnecessaryLocalVariable
+                float ny3 = cosPhi1;
+                float nz3 = sinPhi1 * sinTheta0;
+
+                float s0 = (float)slice / (float) numSlices;
+                float s1 = (float)(slice + 1) / (float)numSlices;
+
+                // First triangle
+                normal(nx0, ny0, nz0);
+                texCoord(s0, 1.0f - t0);  // Flip vertically
+                position(radius * nx0, yOffset + radius * ny0, radius * nz0);
+
+                normal(nx1, ny1, nz1);
+                texCoord(s1, 1.0f - t0);
+                position(radius * nx1, yOffset + radius * ny1, radius * nz1);
+
+                normal(nx2, ny2, nz2);
+                texCoord(s1, 1.0f - t1);
+                position(radius * nx2, yOffset + radius * ny2, radius * nz2);
+
+                // Second triangle
+                normal(nx0, ny0, nz0);
+                texCoord(s0, 1.0f - t0);
+                position(radius * nx0, yOffset + radius * ny0, radius * nz0);
+
+                normal(nx2, ny2, nz2);
+                texCoord(s1, 1.0f - t1);
+                position(radius * nx2, yOffset + radius * ny2, radius * nz2);
+
+                normal(nx3, ny3, nz3);
+                texCoord(s0, 1.0f - t1);
+                position(radius * nx3, yOffset + radius * ny3, radius * nz3);
+
+                theta += dTheta;
+            }
+        }
     }
 
     @Override
     public IndexedMesh build() {
         final float[] finalVertexData = Arrays.copyOf(vertexData, vertexCount * vertexFormat.stride());
         final int[] finalIndices = Arrays.copyOf(indices, indexCount);
+        reset();
         return new IndexedMesh(this.vertexFormat, IndexedMesh.PrimitiveType.TRIANGLES, finalVertexData, finalIndices);
+    }
+
+    private void reset() {
+        currentColor.set(1.0f, 1.0f, 1.0f);
+        currentNormal.set(0.0f, 0.0f, 1.0f);
+        currentTexCoord.set(0.0f, 0.0f);
+        vertexCount = 0;
+        indexCount = 0;
+
+        activeTriangleBatchVertexStart = 0;
+        activeTriangleBatchVertexCount = 0;
+        activeTriangleBatchIndexStart = 0;
+        activeTriangleBatchIndexCount = 0;
+
+        activeColor = null;
+        activeNormal = null;
+        activeTexCoord = null;
+
+        vertexPositionLookup.clear();
     }
 }

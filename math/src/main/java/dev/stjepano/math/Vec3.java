@@ -151,9 +151,19 @@ public final class Vec3 {
         return this.dot(this);
     }
 
+    /// Return squared length from components.
+    public static float lengthSqr(float x, float y, float z) {
+        return x*x + y*y + z*z;
+    }
+
     /// Return vector length.
     public float length() {
         return (float) Math.sqrt(lengthSqr());
+    }
+
+    /// Return length from components.
+    public static float length(float x, float y, float z) {
+        return (float) Math.sqrt(x*x + y*y + z*z);
     }
 
     /// Normalize the vector.

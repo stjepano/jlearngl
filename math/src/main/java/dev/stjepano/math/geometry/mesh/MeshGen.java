@@ -90,6 +90,14 @@ public interface MeshGen {
     /// @return reference to this
     MeshGen addPyramid(float width, float height, float depth);
 
+    /// Construct a capsule around current transform.
+    /// @param radius radius of capsule hemispheres and cylinder
+    /// @param cylinderHeight height of the capsule cylinder part (excluding hemispheres)
+    /// @param numSlices number of slices around Y axis
+    /// @param hemisphereRings number of rings per hemisphere
+    /// @return reference to this
+    MeshGen addCapsule(float radius, float cylinderHeight, int numSlices, int hemisphereRings);
+
     /// Build the indexed mesh.
     ///
     /// **NOTE:** also resets the `MeshGen`.
